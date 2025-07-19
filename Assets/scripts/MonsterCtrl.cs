@@ -27,21 +27,21 @@ public class MonsterCtrl : MonoBehaviour
     private GameObject bloodEffect;
     private int hp = 100;
 
-    void OnEnable()
-    {
-        PlayerCtrl.OnPlayerDie += this.OnPlayerDie;
-    }
+    // void OnEnable()
+    // {
+    //     PlayerCtrl.OnPlayerDie += this.OnPlayerDie;
+    // }
 
-    void OnDisable()
-    {
-        PlayerCtrl.OnPlayerDie -= this.OnPlayerDie;
-    }
+    // void OnDisable()
+    // {
+    //     PlayerCtrl.OnPlayerDie -= this.OnPlayerDie;
+    // }
 
     void Start()
     {
         monsterTr = transform;
 
-        GameObject playerObj = GameObject.FindGameObjectWithTag("PLAYER");
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
         if (playerObj != null)
         {
             playerTr = playerObj.transform;
@@ -54,7 +54,7 @@ public class MonsterCtrl : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         anim = GetComponent<Animator>();
 
-        bloodEffect = Resources.Load<GameObject>("BloodSprayEffect");
+        // bloodEffect = Resources.Load<GameObject>("BloodSprayEffect");
 
         StartCoroutine(CheckMonsterState());
         StartCoroutine(MonsterAction());
@@ -78,78 +78,92 @@ public class MonsterCtrl : MonoBehaviour
         }
     }
 
-    IEnumerator MonsterAction()
+IEnumerator MonsterAction()
+{
+    while (!isDie)
     {
-        while (!isDie)
+        switch (state)
         {
-            switch (state)
-            {
-                case State.IDLE:
+            case State.IDLE:
+                if (agent != null && agent.isActiveAndEnabled)
                     agent.isStopped = true;
-                    anim.SetBool(hashTrace, false);
-                    break;
 
-                case State.TRACE:
-                    if (agent.isOnNavMesh && playerTr != null)
+                anim.SetBool(hashTrace, false);
+                anim.SetBool(hashAttack, false);
+                break;
+
+            case State.TRACE:
+                if (agent != null && agent.isActiveAndEnabled && playerTr != null)
+                {
+                    if (agent.isOnNavMesh)
                     {
                         agent.SetDestination(playerTr.position);
                         agent.isStopped = false;
                     }
-                    anim.SetBool(hashTrace, true);
-                    anim.SetBool(hashAttack, false);
-                    break;
+                }
+                anim.SetBool(hashTrace, true);
+                anim.SetBool(hashAttack, false);
+                break;
 
-                case State.ATTACK:
-                    anim.SetBool(hashAttack, true);
-                    break;
-
-                case State.DIE:
-                    isDie = true;
+            case State.ATTACK:
+                if (agent != null && agent.isActiveAndEnabled)
                     agent.isStopped = true;
-                    anim.SetTrigger(hashDie);
-                    GetComponent<Collider>().enabled = false;
-                    break;
-            }
 
-            yield return new WaitForSeconds(0.3f);
+                anim.SetBool(hashTrace, false);
+                anim.SetBool(hashAttack, true);
+                break;
+
+            case State.DIE:
+                isDie = true;
+
+                if (agent != null && agent.isActiveAndEnabled)
+                    agent.isStopped = true;
+
+                anim.SetTrigger(hashDie);
+                GetComponent<Collider>().enabled = false;
+                break;
         }
+
+        yield return new WaitForSeconds(0.3f);
     }
+}
 
-    void OnCollisionEnter(Collision coll)
-    {
-        if (coll.collider.CompareTag("BULLET"))
-        {
-            Destroy(coll.gameObject);
-            anim.SetTrigger(hashHit);
 
-            Vector3 pos = coll.GetContact(0).point;
-            Quaternion rot = Quaternion.LookRotation(-coll.GetContact(0).normal);
-            ShowBloodEffect(pos, rot);
+    // void OnCollisionEnter(Collision coll)
+    // {
+    //     if (coll.collider.CompareTag("BULLET"))
+    //     {
+    //         Destroy(coll.gameObject);
+    //         anim.SetTrigger(hashHit);
 
-            hp -= 10;
-            if (hp <= 0) state = State.DIE;
-        }
-    }
+    //         Vector3 pos = coll.GetContact(0).point;
+    //         Quaternion rot = Quaternion.LookRotation(-coll.GetContact(0).normal);
+    //         ShowBloodEffect(pos, rot);
 
-    void ShowBloodEffect(Vector3 pos, Quaternion rot)
-    {
-        GameObject blood = Instantiate(bloodEffect, pos, rot, monsterTr);
-        Destroy(blood, 1.0f);
-    }
+    //         hp -= 10;
+    //         if (hp <= 0) state = State.DIE;
+    //     }
+    // }
 
-    void OnDrawGizmos()
-    {
-        if (state == State.TRACE)
-        {
-            Gizmos.color = Color.blue;
-            Gizmos.DrawWireSphere(transform.position, traceDist);
-        }
-        if (state == State.ATTACK)
-        {
-            Gizmos.color = Color.red;
-            Gizmos.DrawWireSphere(transform.position, attackDist);
-        }
-    }
+    // void ShowBloodEffect(Vector3 pos, Quaternion rot)
+    // {
+    //     GameObject blood = Instantiate(bloodEffect, pos, rot, monsterTr);
+    //     Destroy(blood, 1.0f);
+    // }
+
+    // void OnDrawGizmos()
+    // {
+    //     if (state == State.TRACE)
+    //     {
+    //         Gizmos.color = Color.blue;
+    //         Gizmos.DrawWireSphere(transform.position, traceDist);
+    //     }
+    //     if (state == State.ATTACK)
+    //     {
+    //         Gizmos.color = Color.red;
+    //         Gizmos.DrawWireSphere(transform.position, attackDist);
+    //     }
+    // }
 
     void OnTriggerEnter(Collider coll)
     {
@@ -164,3 +178,5 @@ public class MonsterCtrl : MonoBehaviour
         anim.SetTrigger(hashPlayerDie);
     }
 }
+
+

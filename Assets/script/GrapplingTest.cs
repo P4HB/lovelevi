@@ -22,10 +22,10 @@ public class GrapplingTest : MonoBehaviour
 
     // === 비행 및 이동 관련 변수 ===
     public Rigidbody playerRigidbody; 
-    public float grappleForce = 20f;  
-    public float burstAccelerationForce = 30f; 
-    public float burstUpwardForce = 15f; 
-    public float maxGrappleSpeed = 20f;
+    public float grappleForce = 40f;  
+    public float burstAccelerationForce = 40f; 
+    public float burstUpwardForce = 30f; 
+    public float maxGrappleSpeed = 50f;
 
     // === 가스 분사 이펙트 관련 변수 ===
     public ParticleSystem gasJetEffect;

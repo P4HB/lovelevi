@@ -54,6 +54,8 @@ public class GrapplingTest : MonoBehaviour
     public ParticleSystem windEffect; 
 
     // === 플레이어 모델 자세 제어 변수 ===
+    // 이 변수들은 이제 자세 제어 로직이 제거되므로 필요 없을 수 있습니다.
+    // 하지만 Start()에서 null 체크를 위해 남겨두거나, 다른 용도로 사용될 수 있다면 유지합니다.
     public Transform playerModel; 
     public float maxTiltAngle = 30f; 
     public float tiltSpeed = 5f; 
@@ -221,17 +223,14 @@ public class GrapplingTest : MonoBehaviour
         }
 
         // --- WASD 이동 및 회전 로직 ---
-        // 갈고리 비행 중이 아닐 때만 WASD 이동 및 회전 적용
-        // (주의: isGrapplingActive && Input.GetKey(KeyCode.Space) 대신 isGrapplingActive만 사용하여
-        // 비행 중이 아닐 때의 로직을 더 명확히 분리합니다.)
-        bool isGrapplingActive = (isLeftGrappling || isRightGrappling); // 이 변수를 여기서도 사용
+        bool isGrapplingActive = (isLeftGrappling || isRightGrappling);
         bool isHoldingSpaceWhileGrappling = isGrapplingActive && Input.GetKey(KeyCode.Space);
 
 
-        if (!isHoldingSpaceWhileGrappling) // 갈고리 비행 중 (스페이스바 누름)이 아닐 때
+        if (!isHoldingSpaceWhileGrappling) 
         {
-            float horizontalInput = Input.GetAxis("Horizontal"); // A, D
-            float verticalInput = Input.GetAxis("Vertical");   // W, S
+            float horizontalInput = Input.GetAxis("Horizontal"); 
+            float verticalInput = Input.GetAxis("Vertical");   
 
             Vector3 cameraForwardFlat = Vector3.forward; 
             Vector3 cameraRightFlat = Vector3.right;   
@@ -247,11 +246,9 @@ public class GrapplingTest : MonoBehaviour
                 if (cameraRightFlat.magnitude > 0.01f) cameraRightFlat.Normalize();
             }
             
-            // 이동 방향 계산
             Vector3 moveInput = cameraRightFlat * horizontalInput + cameraForwardFlat * verticalInput;
             if (moveInput.magnitude > 0.1f) moveInput.Normalize(); 
             
-            // 회전 로직: 각 키가 눌리는 순간에만 목표 회전값 업데이트
             if (moveInput.magnitude > 0.1f) 
             {
                 if (Input.GetKeyDown(KeyCode.W) && Input.GetKeyDown(KeyCode.A))
@@ -270,7 +267,6 @@ public class GrapplingTest : MonoBehaviour
                 {
                     targetPlayerRotation = Quaternion.LookRotation((-cameraForwardFlat + cameraRightFlat).normalized);
                 }
-                // 단일 키 입력
                 else if (Input.GetKeyDown(KeyCode.W))
                 {
                     targetPlayerRotation = Quaternion.LookRotation(cameraForwardFlat);
@@ -296,95 +292,10 @@ public class GrapplingTest : MonoBehaviour
                 playerRigidbody.MovePosition(playerRigidbody.position + moveInput * moveSpeed * Time.deltaTime);
             }
             
-        } // WASD 이동/회전 로직 끝
+        } 
 
 
-        // --- 비행/가스/자세/FOV 로직 (갈고리 활성화 또는 스페이스바 누름) ---
-        // 이 블록은 isGrapplingActive (갈고리가 걸려있는지) 또는 isHoldingSpaceWhileGrappling (갈고리 중 스페이스바) 상태를 처리합니다.
-        
-        // 가스 이펙트 활성화/비활성화 (지속적인 분출)
-        // 갈고리가 하나라도 걸려있으면 가스 이펙트 재생
-        if (gasJetEffect != null)
-        {
-            if (isGrapplingActive) // 갈고리가 하나라도 걸려있으면 지속 분출
-            {
-                if (!gasJetEffect.isPlaying)
-                {
-                    gasJetEffect.Play();
-                }
-            }
-            else // 갈고리가 모두 해제되면 정지
-            {
-                if (gasJetEffect.isPlaying)
-                {
-                    gasJetEffect.Stop();
-                }
-            }
-        }
-
-        // 바람 효과 활성화/비활성화 (지속적인 분출)
-        // 갈고리 중 스페이스바 누른 상태일 때만 바람 효과 활성화
-        if (windEffect != null)
-        {
-            if (isHoldingSpaceWhileGrappling) // 스페이스바를 누르고 있을 때만 바람 효과
-            {
-                if (!windEffect.isPlaying)
-                {
-                    windEffect.Play();
-                }
-            }
-            else // 스페이스바를 떼거나 갈고리가 해제되면 정지
-            {
-                if (windEffect.isPlaying)
-                {
-                    windEffect.Stop();
-                }
-            }
-        }
-
-        // 카메라 FOV 조절 로직 (스페이스바 누른 상태에 따라)
-        if (playerCamera != null)
-        {
-            float targetFOV = isHoldingSpaceWhileGrappling ? grapplignFOV : normalFOV; // 스페이스바 누른 상태에 따라 FOV 조절
-            playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, fovTransitionSpeed * Time.deltaTime);
-        }
-
-        if (playerModel != null)
-        {
-            if (isHoldingSpaceWhileGrappling)
-            {
-                Vector3 targetGrapplePoint;
-                if (isLeftGrappling && isRightGrappling)
-                    targetGrapplePoint = (leftGrapplePoint + rightGrapplePoint) / 2f;
-                else if (isLeftGrappling)
-                    targetGrapplePoint = leftGrapplePoint;
-                else
-                    targetGrapplePoint = rightGrapplePoint;
-
-                // 줄 당기는 방향 = 줄의 반대방향
-                Vector3 grappleDirection = (transform.position - targetGrapplePoint).normalized;
-
-                // 로컬 기준으로 변환
-                Vector3 localGrappleDir = transform.InverseTransformDirection(grappleDirection);
-
-                // Pitch: Z방향이 앞으로 향할수록 뒤로 젖힘 (양수면 앞으로 숙이므로 -붙임)
-                float targetPitch = -localGrappleDir.z * maxTiltAngle;
-
-                // Roll: X방향이 오른쪽으로 클수록 오른쪽으로 기울임
-                float targetRoll = -localGrappleDir.x * maxSideTiltAngle;
-
-                Quaternion targetTiltRotation = Quaternion.Euler(targetPitch, 0, targetRoll);
-                playerModel.localRotation = Quaternion.Slerp(playerModel.localRotation, targetTiltRotation, tiltSpeed * Time.deltaTime);
-            }
-            else
-            {
-                Quaternion targetNormalRotation = Quaternion.identity;
-                playerModel.localRotation = Quaternion.Slerp(playerModel.localRotation, targetNormalRotation, tiltSpeed * Time.deltaTime);
-            }
-        }
-
-
-        // 비행 물리 로직 (갈고리가 하나라도 걸려있고, 스페이스바를 누르고 있을 때만)
+        // --- 비행 및 가스 이펙트 로직 (스페이스바) ---
         if (isHoldingSpaceWhileGrappling)
         {
             if (playerRigidbody == null) return; 
@@ -398,7 +309,7 @@ public class GrapplingTest : MonoBehaviour
             {
                 targetGrapplePoint = leftGrapplePoint;
             }
-            else // if (isRightGrappling)
+            else 
             {
                 targetGrapplePoint = rightGrapplePoint;
             }
@@ -465,12 +376,15 @@ public class GrapplingTest : MonoBehaviour
                 playerRigidbody.AddForce(Vector3.ClampMagnitude(-transform.right * horizontalInputGrapple * adKeyCurveMultiplier, maxSideForce), ForceMode.Acceleration);
             }
             
-            if (Input.GetKeyDown(KeyCode.Space)) // 스페이스바 누르는 순간 추가 가속
+            if (Input.GetKeyDown(KeyCode.Space)) 
             {
                 Vector3 burstDirection = (directionToTarget * burstAccelerationForce) + (Vector3.up * burstUpwardForce);
                 playerRigidbody.AddForce(burstDirection, ForceMode.Impulse);
 
-                // gasJetEffect.Play()는 이미 위에서 isGrapplingActive에 따라 재생되므로 여기서는 제거
+                if (gasJetEffect != null)
+                {
+                    gasJetEffect.Play();
+                }
             }
 
             if (playerRigidbody.velocity.magnitude > maxGrappleSpeed)
@@ -478,7 +392,74 @@ public class GrapplingTest : MonoBehaviour
                 playerRigidbody.velocity = playerRigidbody.velocity.normalized * maxGrappleSpeed;
             }
         }
-        // 이 else 블록은 비행 물리 로직에만 해당합니다. 이펙트 및 자세 제어는 이 바깥에서 처리됩니다.
-        // 기존의 gasJetEffect.Stop()은 위에서 isGrapplingActive에 따라 분리됨.
+        
+        // --- 가스 이펙트 활성화/비활성화 (지속적인 분출) ---
+        if (gasJetEffect != null)
+        {
+            if (isGrapplingActive) 
+            {
+                if (!gasJetEffect.isPlaying)
+                {
+                    gasJetEffect.Play();
+                }
+            }
+            else 
+            {
+                if (gasJetEffect.isPlaying)
+                {
+                    gasJetEffect.Stop();
+                }
+            }
+        }
+
+        // --- 바람 효과 활성화/비활성화 (지속적인 분출) ---
+        if (windEffect != null)
+        {
+            if (isHoldingSpaceWhileGrappling) 
+            {
+                if (!windEffect.isPlaying)
+                {
+                    windEffect.Play();
+                }
+            }
+            else 
+            {
+                if (windEffect.isPlaying)
+                {
+                    windEffect.Stop();
+                }
+            }
+        }
+
+        // --- 카메라 FOV 조절 로직 ---
+        if (playerCamera != null)
+        {
+            float targetFOV = isHoldingSpaceWhileGrappling ? grapplignFOV : normalFOV; 
+            playerCamera.fieldOfView = Mathf.Lerp(playerCamera.fieldOfView, targetFOV, fovTransitionSpeed * Time.deltaTime);
+        }
+
+        // --- 플레이어 모델 자세 제어 (젖히는 느낌) ---
+        // 이 블록은 isHoldingSpaceWhileGrappling 상태에 따라 모델 자세를 변경합니다.
+        if (playerModel != null)
+        {
+            if (isHoldingSpaceWhileGrappling)
+            {
+                // 항상 뒤로 젖히는 각도
+                float targetPitch = -maxTiltAngle; 
+                float targetRoll = 0f; // 옆으로 젖히는 각도는 현재 로직에서 제외됨
+
+                // 이전에 'targetRoll'을 계산하던 로직 (Rigidbody.velocity 기반)은 제거되었으므로,
+                // 이제 옆으로 젖히는 효과를 원하지 않는다면 이 변수들은 모두 0이 됩니다.
+                // 만약 다시 옆으로 젖히는 효과가 필요하다면 해당 로직을 다시 추가해야 합니다.
+                
+                Quaternion targetTiltRotation = Quaternion.Euler(targetPitch, 0, targetRoll); 
+                playerModel.localRotation = Quaternion.Slerp(playerModel.localRotation, targetTiltRotation, tiltSpeed * Time.deltaTime);
+            }
+            else
+            {
+                Quaternion targetNormalRotation = Quaternion.identity; 
+                playerModel.localRotation = Quaternion.Slerp(playerModel.localRotation, targetNormalRotation, tiltSpeed * Time.deltaTime);
+            }
+        }
     }
 }

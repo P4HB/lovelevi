@@ -5,6 +5,10 @@ TagManager:
   serializedVersion: 2
   tags:
   - Tree
+  - Building
+  - MonsterHand
+  - MonsterFoot
+  - Monster
   layers:
   - Default
   - TransparentFX

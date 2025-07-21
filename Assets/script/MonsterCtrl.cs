@@ -8,8 +8,8 @@ public class MonsterCtrl : MonoBehaviour
     public enum State { IDLE, TRACE, ATTACK, DIE }
     public State state = State.IDLE;
 
-    public float traceDist = 10.0f;
-    public float attackDist = 2.0f;
+    public float traceDist = 1000.0f;
+    public float attackDist = 20.0f;
     public bool isDie = false;
 
     private Transform monsterTr;

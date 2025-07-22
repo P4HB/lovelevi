@@ -37,6 +37,7 @@ public class GrapplingTest : MonoBehaviour
 
     // === 레이캐스트 필터링 변수 ===
     public LayerMask ignoreLayers; 
+    public string[] grappleableTags = { "Tree", "Building", "Monster", "MonsterHand", "MonsterFoot" }; // 줄을 걸 수 있는 태그 배열 (새로 추가 또는 수정)
 
     // === WASD 이동 및 회전 관련 변수 ===
     public float moveSpeed = 5f; 
@@ -114,60 +115,77 @@ public class GrapplingTest : MonoBehaviour
         }
     }
 
+    // --- 새로운 헬퍼 함수 추가 (이 부분이 클래스 중괄호 안에, Update 함수 밖에 있어야 함) ---ws
+    bool IsGrappleableTarget(Collider collider)
+    {
+        if (collider == null) return false;
+
+        foreach (string tag in grappleableTags)
+        {
+            if (collider.CompareTag(tag))
+            {
+                return true;
+            }
+        }
+        return false;
+}
+
     void Update()
     {
         // --- 조준점 색상 변경 로직 ---
         Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
         RaycastHit hit;
         bool hitSomething = Physics.Raycast(ray, out hit, Mathf.Infinity, ~ignoreLayers); 
+// 충돌한 오브젝트가 줄을 걸 수 있는 대상인지 확인하는 헬퍼 함수 호출
+    bool canGrappleTarget = IsGrappleableTarget(hit.collider); // 이 라인은 Update 함수 내부에 있어야 합니다.
 
-        if (crosshairImage != null)
+    if (crosshairImage != null)
+    {
+        if (hitSomething && canGrappleTarget) // hit.collider.CompareTag("Tree") 대신 canGrappleTarget 사용
         {
-            if (hitSomething && hit.collider.CompareTag("Tree"))
-            {
-                crosshairImage.color = grappleableCrosshairColor;
-            }
-            else
-            {
-                crosshairImage.color = defaultCrosshairColor;
-            }
+            crosshairImage.color = grappleableCrosshairColor;
         }
+        else
+        {
+            crosshairImage.color = defaultCrosshairColor;
+        }
+    }
 
-        // --- 왼쪽 갈고리 발사 로직 (마우스 왼클릭) ---
-        if (Input.GetMouseButtonDown(0))
+    // --- 왼쪽 갈고리 발사 로직 (마우스 왼클릭) ---
+    if (Input.GetMouseButtonDown(0))
+    {
+        if (hitSomething && canGrappleTarget) // hit.collider.CompareTag("Tree") 대신 canGrappleTarget 사용
         {
-            if (hitSomething && hit.collider.CompareTag("Tree"))
-            {
-                leftGrapplePoint = hit.point;
-                isLeftGrappling = true;
-                if (leftLine != null)
-                    leftLine.positionCount = 2;
-            }
-            else
-            {
-                isLeftGrappling = false;
-                if (leftLine != null)
-                    leftLine.positionCount = 0;
-            }
+            leftGrapplePoint = hit.point;
+            isLeftGrappling = true;
+            if (leftLine != null)
+                leftLine.positionCount = 2;
         }
+        else
+        {
+            isLeftGrappling = false;
+            if (leftLine != null)
+                leftLine.positionCount = 0;
+        }
+    }
 
-        // --- 오른쪽 갈고리 발사 로직 (마우스 우클릭) ---
-        if (Input.GetMouseButtonDown(1))
+    // --- 오른쪽 갈고리 발사 로직 (마우스 우클릭) ---
+    if (Input.GetMouseButtonDown(1))
+    {
+        if (hitSomething && canGrappleTarget) // hit.collider.CompareTag("Tree") 대신 canGrappleTarget 사용
         {
-            if (hitSomething && hit.collider.CompareTag("Tree"))
-            {
-                rightGrapplePoint = hit.point;
-                isRightGrappling = true;
-                if (rightLine != null)
-                    rightLine.positionCount = 2;
-            }
-            else
-            {
-                isRightGrappling = false;
-                if (rightLine != null)
-                    rightLine.positionCount = 0;
-            }
+            rightGrapplePoint = hit.point;
+            isRightGrappling = true;
+            if (rightLine != null)
+                rightLine.positionCount = 2;
         }
+        else
+        {
+            isRightGrappling = false;
+            if (rightLine != null)
+                rightLine.positionCount = 0;
+        }
+    }
         
         // --- 라인 렌더링 ---
         if (isLeftGrappling)

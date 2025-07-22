@@ -14,7 +14,7 @@ public class GameManager : MonoBehaviour
     public TextMeshProUGUI timerTextInstance; // 이 변수는 Start()에서 로드됩니다.
 
     [Header("Scene Settings")]
-    public string mainGameSceneName = "game";
+    public string mainGameSceneName = "test";
     public string endSceneName = "EndScene"; // 새로 추가: 게임 종료 씬 이름
 
     void Awake()
@@ -49,6 +49,12 @@ public class GameManager : MonoBehaviour
             elapsedTime += Time.deltaTime;
             UpdateTimerUI();
         }
+    }
+
+
+    public void GoToGameScene()
+    {
+        SceneManager.LoadScene(mainGameSceneName); // "test"로 이동
     }
 
     void OnSceneLoaded(Scene scene, LoadSceneMode mode)

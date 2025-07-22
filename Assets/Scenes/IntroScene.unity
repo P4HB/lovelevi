@@ -896,7 +896,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isGameStarted: 0
   elapsedTime: 0
-  mainGameSceneName: MainGameScene
+  timerTextInstance: {fileID: 0}
+  mainGameSceneName: test
+  endSceneName: EndScene
 --- !u!4 &1991725287
 Transform:
   m_ObjectHideFlags: 0
@@ -1068,7 +1070,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1991725286}
         m_TargetAssemblyTypeName: GameManager, Assembly-CSharp
-        m_MethodName: StartGame
+        m_MethodName: GoToGameScene
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

@@ -69,6 +69,13 @@ public class PlayerController : MonoBehaviour
     private bool isGrounded = true;          // 플레이어가 땅에 닿아있는지 여부
     private bool isAttack = false;
 
+    // 공격 관련 변수
+    private bool isNearTitanNeck = false;
+    private GameObject currentTargetTitan;
+
+    //ui 관련 변수
+    public GameObject titanPromptTextUI;
+
     void Start()
     {
         animator = GetComponent<Animator>();
@@ -94,13 +101,23 @@ public class PlayerController : MonoBehaviour
         {
             crosshairImage.color = canGrapple ? grappleableCrosshairColor : defaultCrosshairColor;
         }
-        if (Input.GetKeyDown(KeyCode.T) && !isAttack && !isGrounded)
+        if (Input.GetKeyDown(KeyCode.R) && !isAttack && !isGrounded)
         {
             isAttack = true;
             animator.SetBool("isAttack", true);
-            
-            // 공격 중에는 움직임을 멈추게 할 수도 있습니다.
-            // 예: playerRigidbody.velocity = Vector3.zero;
+
+            // 뒷목 근처에 있는 상태라면 해당 거인을 처치
+            if (isNearTitanNeck && currentTargetTitan != null)
+            {
+                MonsterCtrl titan = currentTargetTitan.GetComponent<MonsterCtrl>();
+                if (titan != null)
+                {
+                    titan.Die();
+                        
+                    if (titanPromptTextUI != null)
+                        titanPromptTextUI.SetActive(false); // 성공했으니 숨김
+                }
+            }
         }
         // --- 로직 변경: 갈고리 '발사' 로직 (마우스 클릭) ---
         if (Input.GetMouseButtonDown(0)) // 왼쪽 클릭으로 왼쪽 갈고리 발사/연결
@@ -174,7 +191,28 @@ public class PlayerController : MonoBehaviour
         UpdateCameraFOV(isFlying);
         UpdatePlayerModelTilt(isFlying);
     }
-    
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("TitanNeck"))
+        {
+            isNearTitanNeck = true;
+            currentTargetTitan = other.GetComponentInParent<MonsterCtrl>()?.gameObject;
+            if (titanPromptTextUI != null)
+                titanPromptTextUI.SetActive(true); // UI 표시
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("TitanNeck"))
+        {
+            isNearTitanNeck = false;
+            currentTargetTitan = null;
+            
+            if (titanPromptTextUI != null)
+                titanPromptTextUI.SetActive(false); // UI 숨김
+        }
+    }
     private bool HandleGroundMovement()
     {
         float horizontalInput = Input.GetAxis("Horizontal");

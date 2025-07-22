@@ -114,14 +114,7 @@ IEnumerator MonsterAction()
                 break;
 
             case State.DIE:
-                isDie = true;
-
-                if (agent != null && agent.isActiveAndEnabled)
-                    agent.isStopped = true;
-
-                anim.SetTrigger(hashDie);
-                GetComponent<Collider>().enabled = false;
-                break;
+                yield break;
         }
 
         yield return new WaitForSeconds(0.3f);
@@ -176,6 +169,21 @@ IEnumerator MonsterAction()
         agent.isStopped = true;
         anim.SetFloat(hashSpeed, Random.Range(0.8f, 1.2f));
         anim.SetTrigger(hashPlayerDie);
+    }
+    public void Die()
+    {
+        if (isDie) return; // 이미 죽었으면 무시
+
+        state = State.DIE;
+        isDie = true;
+
+        if (agent != null && agent.isActiveAndEnabled)
+            agent.isStopped = true;
+
+        anim.SetTrigger(hashDie);
+        GetComponent<Collider>().enabled = false;
+
+        StopAllCoroutines(); // 상태 검사/행동 중단
     }
 }
 

@@ -59,17 +59,28 @@ public class ThirdPersonCamera : MonoBehaviour
         // 플레이어 위치부터 원하는 카메라 위치까지 레이 발사
         if (Physics.SphereCast(player.position, cameraCollisionRadius, playerToDesired.normalized, out hit, currentMaxDistance, cameraCollisionLayers))
         {
-            // 충돌이 감지되면 충돌 지점까지 카메라 위치를 당겨옴
-            Vector3 hitPoint = player.position + playerToDesired.normalized * (hit.distance - cameraCollisionRadius);
-            
-            // 카메라가 플레이어에게 너무 가까이 붙지 않도록 최소 거리 제한
-            if (Vector3.Distance(hitPoint, player.position) < minDistanceToPlayer)
+        bool isGroundCollision = Vector3.Dot(hit.normal, Vector3.up) > 0.7f; // 수직에 가까운 평면 = 땅
+
+            if (isGroundCollision)
             {
-                hitPoint = player.position + playerToDesired.normalized * minDistanceToPlayer;
+                // 땅과 충돌한 경우 → 위쪽 보기 허용: 부드럽게 카메라를 플레이어 쪽으로 붙임
+                Vector3 adjustedPosition = player.position + playerToDesired.normalized * minDistanceToPlayer;
+                transform.position = Vector3.Lerp(transform.position, adjustedPosition, cameraReturnSpeed * Time.deltaTime);
             }
-            
-            transform.position = hitPoint; // 충돌 지점으로 즉시 이동 (부드러운 이동은 else 블록에서)
-        }
+            else
+            {
+                // 벽과 충돌한 경우 → 기존처럼 카메라 당기기
+                Vector3 hitPoint = player.position + playerToDesired.normalized * (hit.distance - cameraCollisionRadius);
+
+                // 최소 거리 보장
+                if (Vector3.Distance(hitPoint, player.position) < minDistanceToPlayer)
+                {
+                    hitPoint = player.position + playerToDesired.normalized * minDistanceToPlayer;
+                }
+
+                transform.position = hitPoint;
+            }
+            }
         else
         {
             // 충돌이 없으면 원하는 위치로 부드럽게 돌아감

@@ -203,7 +203,21 @@ IEnumerator MonsterAction()
         // OnCollisionEnter가 호출되지 않을 수 있습니다.
         // 하지만 혹시 모를 경우를 대비해 로그를 추가합니다.
     }
+    public void Die()
+{
+    if (isDie) return; // 이미 죽었으면 무시
 
+    state = State.DIE;
+    isDie = true;
+
+    if (agent != null && agent.isActiveAndEnabled)
+        agent.isStopped = true;
+
+    anim.SetTrigger(hashDie);
+    GetComponent<Collider>().enabled = false;
+
+    StopAllCoroutines(); // 상태 검사/행동 중단
+}
 }
 
 

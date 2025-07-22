@@ -66,10 +66,9 @@ public class PlayerController : MonoBehaviour
     public float maxSideTiltAngle = 15f;
 
     [Header("Ground Check")]
-    public float groundCheckDistance = 1f; // 플레이어 발밑에서 얼마나 아래까지 바닥을 감지할지 거리
+    public float groundCheckDistance = 3f; // 플레이어 발밑에서 얼마나 아래까지 바닥을 감지할지 거리
     public LayerMask Grappleable;            // 바닥으로 인식할 오브젝트들의 레이어 (이것은 줄 걸기와는 별개)
     private bool isGrounded = true;          // 플레이어가 땅에 닿아있는지 여부
-    private bool isAttack = false;
 
     // 공격 관련 변수
     private bool isNearTitanNeck = false;
@@ -107,21 +106,17 @@ public class PlayerController : MonoBehaviour
             // hitSomething && canGrappleTarget을 사용하여 조준점 색상 결정
             crosshairImage.color = hitSomething && canGrappleTarget ? grappleableCrosshairColor : defaultCrosshairColor;
         }
-        if (Input.GetKeyDown(KeyCode.R) && !isAttack && !isGrounded)
+        if (Input.GetKeyDown(KeyCode.R))
         {
-            isAttack = true;
-            animator.SetBool("isAttack", true);
-
-            // 뒷목 근처에 있는 상태라면 해당 거인을 처치
+            animator.SetTrigger("Attack");
             if (isNearTitanNeck && currentTargetTitan != null)
             {
                 MonsterCtrl titan = currentTargetTitan.GetComponent<MonsterCtrl>();
                 if (titan != null)
                 {
                     titan.Die();
-                        
                     if (titanPromptTextUI != null)
-                        titanPromptTextUI.SetActive(false); // 성공했으니 숨김
+                        titanPromptTextUI.SetActive(false);
                 }
             }
         }
@@ -352,12 +347,6 @@ public class PlayerController : MonoBehaviour
         isGrounded = Physics.Raycast(transform.position, Vector3.down, groundCheckDistance, Grappleable);
         animator.SetBool("isGrounded", isGrounded);
     }
-    public void OnAttackAnimationEnd()
-    {
-        isAttack = false;
-        animator.SetBool("isAttack", false);
-    }
-
     // --- 새로운 헬퍼 함수 추가 (클래스 내부, Update 함수 밖) ---
     // 이 함수가 있어야 grappleableTags 배열을 사용할 수 있습니다.
     bool IsGrappleableTarget(Collider collider)

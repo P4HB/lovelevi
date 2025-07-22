@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI; // UI 요소를 사용하기 위해 추가
 using TMPro; // TextMeshPro 사용을 위해 추가
+using System.Collections;
 
 public class PlayerHealth : MonoBehaviour
 {
@@ -45,8 +46,7 @@ public class PlayerHealth : MonoBehaviour
     // 게임 시작 시 초기화
     void Start()
     {
-        currentHealth = maxHealth; // 게임 시작 시 현재 체력을 최대 체력으로 설정
-        UpdateHealthUI(); // UI 업데이트
+        ResetHealth(); // 게임 시작 시 체력 초기화
     }
 
     // 데미지를 입었을 때 호출되는 함수
@@ -99,7 +99,20 @@ public class PlayerHealth : MonoBehaviour
         Debug.Log("Player has died!");
         // 여기에 플레이어가 죽었을 때의 로직을 추가합니다.
         // 예: 플레이어 오브젝트 비활성화
-        gameObject.SetActive(false); 
+        // gameObject.SetActive(false); 
+
+        // GameManager 인스턴스에 안전하게 접근하는 로직 강화
+        // 코루틴으로 한 프레임 지연시켜 GameManager가 초기화될 시간을 줍니다.
+        StartCoroutine(HandleGameOverAfterDelay());
+    }
+
+    private IEnumerator HandleGameOverAfterDelay()
+    {
+        // 다음 프레임까지 기다립니다. (GameManager가 Awake/Start를 마칠 시간을 줍니다.)
+        yield return null; 
+
+        // 코루틴이 시작된 후, 그리고 씬 전환 직전에 플레이어 오브젝트를 비활성화합니다.
+        gameObject.SetActive(false); // <<< 이 줄을 여기로 옮깁니다!
 
         // GameManager 인스턴스가 존재하면 게임 종료 함수 호출
         if (GameManager.Instance != null)
@@ -108,7 +121,9 @@ public class PlayerHealth : MonoBehaviour
         }
         else
         {
-            Debug.LogWarning("GameManager.Instance를 찾을 수 없습니다. 게임 종료 처리 실패.");
+            Debug.LogError("FATAL ERROR: GameManager.Instance를 여전히 찾을 수 없습니다! 게임 종료 처리 실패.");
+            // 최후의 수단: 직접 씬 로드 (GameManager 없이) - 이는 임시 방편입니다.
+            // UnityEngine.SceneManagement.SceneManager.LoadScene("EndScene"); 
         }
     }
 
@@ -162,4 +177,17 @@ public class PlayerHealth : MonoBehaviour
             // 특정 로직 (예: 몬스터의 공격 애니메이션 트리거 등)
         }
     }
+
+    // === 새로 추가된 체력 초기화 함수 ===
+    public void ResetHealth()
+    {
+        currentHealth = maxHealth;
+        // 플레이어 오브젝트 활성화 (죽었을 때 비활성화했다면)
+        // if (playerModel != null) playerModel.SetActive(true);
+        // else gameObject.SetActive(true); // 전체 오브젝트 활성화
+
+        UpdateHealthUI(); // UI 업데이트
+        Debug.Log($"Player Health Reset: {currentHealth}/{maxHealth}");
+    }
+
 }

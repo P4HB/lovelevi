@@ -3,6 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp", "Assembly-CSharp.csproj", "{EA233662-1FC3-FAF7-5636-1C7236906907}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp-Editor", "Assembly-CSharp-Editor.csproj", "{96389AEF-9F79-FB72-3D37-48D7A2E1A182}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ALP8310_ControllerGlobal", "ALP8310_ControllerGlobal.csproj", "{62315303-C3DD-6B24-94FA-288C2EB6EC7A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ALP8310_ControllerGlobal.Editor", "ALP8310_ControllerGlobal.Editor.csproj", "{26259663-9AB0-74E2-9858-1857E689352B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -13,6 +19,18 @@ Global
 		{EA233662-1FC3-FAF7-5636-1C7236906907}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EA233662-1FC3-FAF7-5636-1C7236906907}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EA233662-1FC3-FAF7-5636-1C7236906907}.Release|Any CPU.Build.0 = Release|Any CPU
+		{96389AEF-9F79-FB72-3D37-48D7A2E1A182}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{96389AEF-9F79-FB72-3D37-48D7A2E1A182}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{96389AEF-9F79-FB72-3D37-48D7A2E1A182}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{96389AEF-9F79-FB72-3D37-48D7A2E1A182}.Release|Any CPU.Build.0 = Release|Any CPU
+		{62315303-C3DD-6B24-94FA-288C2EB6EC7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{62315303-C3DD-6B24-94FA-288C2EB6EC7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{62315303-C3DD-6B24-94FA-288C2EB6EC7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{62315303-C3DD-6B24-94FA-288C2EB6EC7A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{26259663-9AB0-74E2-9858-1857E689352B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26259663-9AB0-74E2-9858-1857E689352B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26259663-9AB0-74E2-9858-1857E689352B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26259663-9AB0-74E2-9858-1857E689352B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

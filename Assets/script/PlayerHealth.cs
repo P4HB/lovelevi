@@ -25,12 +25,22 @@ public class PlayerHealth : MonoBehaviour
     [Tooltip("데미지를 줄 건물 태그")]
     public string buildingTag = "Building"; // 데미지를 줄 건물 태그 (새로 추가)
 
-    [Tooltip("몬스터 손/발 태그들")]
-    public string monsterHandTag = "MonsterHand"; // 몬스터 손 태그 (새로 추가)
-    public string monsterFootTag = "MonsterFoot"; // 몬스터 발 태그 (새로 추가)
+    [Tooltip("몬스터 본체 충돌 시 받는 데미지 양")]
+    public int monsterCollisionDamage = 20; 
+    [Tooltip("데미지를 줄 몬스터 태그")]
+    public string monsterTag = "Monster"; // 몬스터 본체 태그
 
-    [Tooltip("몬스터 손/발에 부딪혔을 때 받는 데미지 양")]
-    public int monsterAttackDamage = 20; // 몬스터 공격 데미지 (새로 추가)
+    // === 몬스터 부위 콜라이더 이름 (새로 추가) ===
+    [Header("Monster Part Names")]
+    public string monsterHandName = "Hitbox_Hand_L"; // 예시: 왼쪽 손 이름
+    public string monsterFootName = "Hitbox_Foot_L"; // 예시: 왼쪽 발 이름
+    // (오른쪽 손발도 포함해야 하므로, 배열로 바꾸거나 더 많은 변수 선언)
+    public string[] damageableMonsterPartNames; // <<< 여기에 모든 히트박스 이름 추가 (Inspector에서)
+
+    // [Tooltip("몬스터 손/발 태그들")]
+    // public string monsterHandTag = "MonsterHand"; // 몬스터 손 태그 (새로 추가)
+    // public string monsterFootTag = "MonsterFoot"; // 몬스터 발 태그 (새로 추가)
+    
 
     // 게임 시작 시 초기화
     void Start()
@@ -102,25 +112,54 @@ public class PlayerHealth : MonoBehaviour
         }
     }
 
-        void OnCollisionEnter(Collision collision)
+        // --- OnCollisionEnter 함수 (Physics Layer Matrix에서 서로 충돌하고 Is Trigger가 false인 콜라이더끼리 충돌 시) ---
+    void OnCollisionEnter(Collision collision)
     {
-       // 충돌한 오브젝트의 태그 확인
-        string collidedTag = collision.gameObject.tag;
+       string collidedTag = collision.gameObject.tag; // 충돌한 GameObject의 태그
+       string collidedColliderName = collision.collider.name; // 충돌한 Collider의 이름 <<< 이 변수를 사용
 
-        // 디버그 로그 추가: 어떤 태그와 충돌했는지 확인
-        Debug.Log("Player collided with: " + collision.gameObject.name + ", Tag: " + collidedTag);
+       Debug.Log($"<color=blue>[OnCollisionEnter]</color> Player collided with: {collision.gameObject.name}, Tag: {collidedTag}, Collider: {collidedColliderName}");
 
-        // 1. 건물 충돌 데미지
-        if (collidedTag == buildingTag)
+       // 1. 건물 충돌 데미지
+       if (collidedTag == buildingTag)
+       {
+           Debug.Log($"Player collided with Building: {collision.gameObject.name}, Taking {buildingCollisionDamage} damage.");
+           TakeDamage(buildingCollisionDamage);
+       }
+       // 2. 몬스터 부위 충돌 데미지 (콜라이더 이름으로 판단)
+       else if (IsDamageableMonsterPart(collidedColliderName)) // <<< 변경된 부분
+       {
+           Debug.Log($"Player hit by Monster Part: {collidedColliderName}, Taking {monsterCollisionDamage} damage."); // 데미지 메시지 수정
+           TakeDamage(monsterCollisionDamage); // 데미지 적용
+       }
+    }
+
+    // --- 새로운 헬퍼 함수 추가 (클래스 내부, OnCollisionEnter 함수 밖) ---
+    bool IsDamageableMonsterPart(string colliderName)
+    {
+        foreach (string name in damageableMonsterPartNames)
         {
-            Debug.Log("Player collided with Building: " + collision.gameObject.name + ", Taking " + buildingCollisionDamage + " damage.");
-            TakeDamage(buildingCollisionDamage);
+            if (colliderName == name) // 콜라이더 이름이 배열에 있는지 확인
+            {
+                return true;
+            }
         }
-        // 2. 몬스터 손/발 충돌 데미지
-        else if (collidedTag == monsterHandTag || collidedTag == monsterFootTag)
+        return false;
+    }
+
+    // --- OnTriggerEnter 함수 (Physics Layer Matrix에서 서로 충돌하고 최소 하나가 Is Trigger인 콜라이더끼리 충돌 시) ---
+    void OnTriggerEnter(Collider other) // OnCollisionEnter와 다른 콜백입니다.
+    {
+        string collidedTag = other.gameObject.tag;
+        // <<< 이 로그가 OnTriggerEnter가 호출되었음을 명확히 보여줍니다.
+        Debug.Log($"<color=green>[OnTriggerEnter]</color> Player entered Trigger: {other.gameObject.name}, Tag: {collidedTag}, Collider: {other.name}");
+
+        // 여기서는 데미지를 주지 않고, MonsterCtrl에서 Trigger를 통해 플레이어와 접촉했음을 알릴 수 있습니다.
+        // 몬스터 본체(Is Trigger = true)와의 접촉을 여기서 감지할 수 있습니다.
+        if (collidedTag == "Monster") // 몬스터 본체에 Is Trigger = true가 설정되어 있을 때
         {
-            Debug.Log("Player hit by Monster Part: " + collision.gameObject.name + ", Taking " + monsterAttackDamage + " damage.");
-            TakeDamage(monsterAttackDamage);
+            Debug.Log($"Player touched Monster Body (Trigger): {other.gameObject.name}");
+            // 특정 로직 (예: 몬스터의 공격 애니메이션 트리거 등)
         }
     }
 }

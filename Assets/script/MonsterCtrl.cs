@@ -165,10 +165,6 @@ IEnumerator MonsterAction()
     //     }
     // }
 
-    void OnTriggerEnter(Collider coll)
-    {
-        Debug.Log(coll.gameObject.name);
-    }
 
     void OnPlayerDie()
     {
@@ -177,6 +173,44 @@ IEnumerator MonsterAction()
         anim.SetFloat(hashSpeed, Random.Range(0.8f, 1.2f));
         anim.SetTrigger(hashPlayerDie);
     }
+
+    // --- OnTriggerEnter 함수 (수정된 부분) ---
+    void OnTriggerEnter(Collider other) // 'coll' 대신 'other' 사용 (관례)
+    {
+        string collidedTag = other.gameObject.tag;
+        // <<< 이 로그가 OnTriggerEnter가 호출되었음을 명확히 보여줍니다.
+        Debug.Log($"<color=green>[Monster OnTriggerEnter]</color> Monster detected Trigger: {other.gameObject.name}, Tag: {collidedTag}");
+
+        // 플레이어와 충돌했는지 확인 (PlayerHealth 스크립트 연결을 가정)
+        if (other.CompareTag("Player"))
+        {
+            // 이 로직은 PlayerHealth에서 처리하므로, 여기서는 몬스터가 플레이어를 '감지'했다는 역할만 합니다.
+            // 몬스터가 플레이어를 감지했음을 알려 AI 상태 전환 등에 사용될 수 있습니다.
+            Debug.Log($"Monster detected Player (Trigger): {other.gameObject.name}");
+        }
+        else if (other.CompareTag("BULLET")) // 총알과 충돌 시
+        {
+            Destroy(other.gameObject); 
+            anim.SetTrigger(hashHit); 
+            
+            // ... (bloodEffect, hp 감소 로직) ...
+            
+            Debug.Log($"Monster hit by BULLET! Monster HP: {hp}");
+        }
+    }
+
+    // OnCollisionEnter 함수도 추가하여 어떤 충돌이 발생하는지 명확히 확인
+    void OnCollisionEnter(Collision collision)
+    {
+        string collidedTag = collision.gameObject.tag;
+        // <<< 이 로그가 OnCollisionEnter가 호출되었음을 명확히 보여줍니다.
+        Debug.Log($"<color=blue>[Monster OnCollisionEnter]</color> Monster collided with: {collision.gameObject.name}, Tag: {collidedTag}");
+
+        // 몬스터의 Rigidbody.isKinematic이 true이고 Collider.isTrigger가 false이면
+        // OnCollisionEnter가 호출되지 않을 수 있습니다.
+        // 하지만 혹시 모를 경우를 대비해 로그를 추가합니다.
+    }
+
 }
 
 

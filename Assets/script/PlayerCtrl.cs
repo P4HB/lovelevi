@@ -41,7 +41,9 @@ public class PlayerController : MonoBehaviour
     public float maxSideForce = 10f;
 
     // === 레이캐스트 필터링 변수 ===
-    public LayerMask ignoreLayers;
+    public LayerMask ignoreLayers; 
+    // 줄을 걸 수 있는 태그 배열에 "Building"과 "Monster" 관련 태그들을 모두 포함
+    public string[] grappleableTags = { "Tree", "Building", "Monster", "MonsterHand", "MonsterFoot" }; // <<< 이 배열에 "Building" 추가
 
     // === WASD 이동 및 회전 관련 변수 ===
     public float moveSpeed = 5f;
@@ -65,7 +67,7 @@ public class PlayerController : MonoBehaviour
 
     [Header("Ground Check")]
     public float groundCheckDistance = 1f; // 플레이어 발밑에서 얼마나 아래까지 바닥을 감지할지 거리
-    public LayerMask Grappleable;            // 바닥으로 인식할 오브젝트들의 레이어
+    public LayerMask Grappleable;            // 바닥으로 인식할 오브젝트들의 레이어 (이것은 줄 걸기와는 별개)
     private bool isGrounded = true;          // 플레이어가 땅에 닿아있는지 여부
     private bool isAttack = false;
 
@@ -86,26 +88,27 @@ public class PlayerController : MonoBehaviour
     {
         checkIfGrounded();
         // --- 조준점 및 레이캐스트 ---
-        Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
+        Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0)); 
         RaycastHit hit;
-        bool canGrapple = Physics.Raycast(ray, out hit, Mathf.Infinity, ~ignoreLayers) && hit.collider.CompareTag("Tree");
+        // Physics.Raycast에 ignoreLayers를 사용합니다.
+        // 그리고 canGrapple 로직을 IsGrappleableTarget 함수로 변경합니다.
+        bool hitSomething = Physics.Raycast(ray, out hit, Mathf.Infinity, ~ignoreLayers);
+        bool canGrappleTarget = IsGrappleableTarget(hit.collider); // <<< 이 함수를 사용하여 태그 확인
 
         if (crosshairImage != null)
         {
-            crosshairImage.color = canGrapple ? grappleableCrosshairColor : defaultCrosshairColor;
+            // hitSomething && canGrappleTarget을 사용하여 조준점 색상 결정
+            crosshairImage.color = hitSomething && canGrappleTarget ? grappleableCrosshairColor : defaultCrosshairColor;
         }
         if (Input.GetKeyDown(KeyCode.T) && !isAttack && !isGrounded)
         {
             isAttack = true;
             animator.SetBool("isAttack", true);
-            
-            // 공격 중에는 움직임을 멈추게 할 수도 있습니다.
-            // 예: playerRigidbody.velocity = Vector3.zero;
         }
         // --- 로직 변경: 갈고리 '발사' 로직 (마우스 클릭) ---
         if (Input.GetMouseButtonDown(0)) // 왼쪽 클릭으로 왼쪽 갈고리 발사/연결
         {
-            if (canGrapple)
+            if (hitSomething && canGrappleTarget) // hitSomething && canGrappleTarget 사용
             {
                 leftGrapplePoint = hit.point;
                 isLeftGrappling = true;
@@ -114,7 +117,7 @@ public class PlayerController : MonoBehaviour
         }
         if (Input.GetMouseButtonDown(1)) // 오른쪽 클릭으로 오른쪽 갈고리 발사/연결
         {
-            if (canGrapple)
+            if (hitSomething && canGrappleTarget) // hitSomething && canGrappleTarget 사용
             {
                 rightGrapplePoint = hit.point;
                 isRightGrappling = true;
@@ -193,83 +196,83 @@ public class PlayerController : MonoBehaviour
 
     // --- 로직 변경: 함수가 당기는 방향을 인자로 받도록 수정 ---
     private void HandleFlyingMovement(bool pullingLeft, bool pullingRight)
-{
-    if (playerRigidbody == null) return;
-    
-    // --- 지속적인 당기는 힘 계산 ---
-    Vector3 totalForceDirection = Vector3.zero;
-    if (pullingLeft)
     {
-        totalForceDirection += (leftGrapplePoint - transform.position).normalized;
-    }
-    if (pullingRight)
-    {
-        totalForceDirection += (rightGrapplePoint - transform.position).normalized;
-    }
-    playerRigidbody.AddForce(totalForceDirection.normalized * grappleForce, ForceMode.Acceleration);
-
-    // --- 순간 가속 (Burst) 로직 ---
-    if (isLeftGrappling && Input.GetKeyDown(KeyCode.LeftControl))
-    {
-        Vector3 burstDirection = ((leftGrapplePoint - transform.position).normalized * burstAccelerationForce) + (Vector3.up * burstUpwardForce);
-        playerRigidbody.AddForce(burstDirection, ForceMode.Impulse);
-    }
-    if (isRightGrappling && Input.GetKeyDown(KeyCode.Space))
-    {
-        Vector3 burstDirection = ((rightGrapplePoint - transform.position).normalized * burstAccelerationForce) + (Vector3.up * burstUpwardForce);
-        playerRigidbody.AddForce(burstDirection, ForceMode.Impulse);
-    }
-
-    // --- 회전 로직 추가: 갈고리 줄과 몸을 정렬하려는 회전력 ---
-    Vector3 totalTorque = Vector3.zero;
-    float rotationCorrectionForce = 50.0f; // 회전 보정 힘의 강도. 이 값을 조절하여 회전 속도를 바꿀 수 있습니다.
-
-    if (pullingLeft)
-    {
-        // 플레이어 중심에서 갈고리 지점까지의 이상적인 방향
-        Vector3 idealDirection = (leftGrapplePoint - transform.position).normalized;
-        // 실제 갈고리 줄의 현재 방향
-        Vector3 currentLineDirection = (leftGrapplePoint - leftGrappleStartPoint.position).normalized;
+        if (playerRigidbody == null) return;
         
-        // 두 벡터의 외적을 통해 회전 축을 구함. 이 축을 중심으로 회전해야 두 벡터가 정렬됨.
-        Vector3 rotationAxis = Vector3.Cross(currentLineDirection, idealDirection);
-        // 두 벡터 사이의 각도를 구해서 회전력의 크기로 사용. 각도가 클수록 더 강하게 회전.
-        float angleDifference = Vector3.Angle(currentLineDirection, idealDirection);
+        // --- 지속적인 당기는 힘 계산 ---
+        Vector3 totalForceDirection = Vector3.zero;
+        if (pullingLeft)
+        {
+            totalForceDirection += (leftGrapplePoint - transform.position).normalized;
+        }
+        if (pullingRight)
+        {
+            totalForceDirection += (rightGrapplePoint - transform.position).normalized;
+        }
+        playerRigidbody.AddForce(totalForceDirection.normalized * grappleForce, ForceMode.Acceleration);
 
-        // 계산된 회전력 추가
-        totalTorque += rotationAxis * angleDifference * rotationCorrectionForce;
+        // --- 순간 가속 (Burst) 로직 ---
+        if (isLeftGrappling && Input.GetKeyDown(KeyCode.LeftControl))
+        {
+            Vector3 burstDirection = ((leftGrapplePoint - transform.position).normalized * burstAccelerationForce) + (Vector3.up * burstUpwardForce);
+            playerRigidbody.AddForce(burstDirection, ForceMode.Impulse);
+        }
+        if (isRightGrappling && Input.GetKeyDown(KeyCode.Space))
+        {
+            Vector3 burstDirection = ((rightGrapplePoint - transform.position).normalized * burstAccelerationForce) + (Vector3.up * burstUpwardForce);
+            playerRigidbody.AddForce(burstDirection, ForceMode.Impulse);
+        }
+
+        // --- 회전 로직 추가: 갈고리 줄과 몸을 정렬하려는 회전력 ---
+        Vector3 totalTorque = Vector3.zero;
+        float rotationCorrectionForce = 50.0f; // 회전 보정 힘의 강도. 이 값을 조절하여 회전 속도를 바꿀 수 있습니다.
+
+        if (pullingLeft)
+        {
+            // 플레이어 중심에서 갈고리 지점까지의 이상적인 방향
+            Vector3 idealDirection = (leftGrapplePoint - transform.position).normalized;
+            // 실제 갈고리 줄의 현재 방향
+            Vector3 currentLineDirection = (leftGrapplePoint - leftGrappleStartPoint.position).normalized;
+            
+            // 두 벡터의 외적을 통해 회전 축을 구함. 이 축을 중심으로 회전해야 두 벡터가 정렬됨.
+            Vector3 rotationAxis = Vector3.Cross(currentLineDirection, idealDirection);
+            // 두 벡터 사이의 각도를 구해서 회전력의 크기로 사용. 각도가 클수록 더 강하게 회전.
+            float angleDifference = Vector3.Angle(currentLineDirection, idealDirection);
+
+            // 계산된 회전력 추가
+            totalTorque += rotationAxis * angleDifference * rotationCorrectionForce;
+        }
+
+        if (pullingRight)
+        {
+            // 오른쪽 갈고리에 대해서도 동일한 로직 적용
+            Vector3 idealDirection = (rightGrapplePoint - transform.position).normalized;
+            Vector3 currentLineDirection = (rightGrapplePoint - rightGrappleStartPoint.position).normalized;
+            Vector3 rotationAxis = Vector3.Cross(currentLineDirection, idealDirection);
+            float angleDifference = Vector3.Angle(currentLineDirection, idealDirection);
+            
+            totalTorque += rotationAxis * angleDifference * rotationCorrectionForce;
+        }
+
+        // 계산된 총 회전력을 리지드바디에 적용
+        playerRigidbody.AddTorque(totalTorque, ForceMode.Acceleration);
+        // --- 회전 로직 종료 ---
+
+
+        // --- 커브 비행 로직 (A/D 키) ---
+        float horizontalInputGrapple = Input.GetAxis("Horizontal");
+        if (Mathf.Abs(horizontalInputGrapple) > 0.1f)
+        {
+            Vector3 sideForce = playerCamera.transform.right * horizontalInputGrapple * adKeyCurveMultiplier;
+            playerRigidbody.AddForce(Vector3.ClampMagnitude(sideForce, maxSideForce), ForceMode.Acceleration);
+        }
+
+        // --- 속도 제한 ---
+        if (playerRigidbody.velocity.magnitude > maxGrappleSpeed)
+        {
+            playerRigidbody.velocity = playerRigidbody.velocity.normalized * maxGrappleSpeed;
+        }
     }
-
-    if (pullingRight)
-    {
-        // 오른쪽 갈고리에 대해서도 동일한 로직 적용
-        Vector3 idealDirection = (rightGrapplePoint - transform.position).normalized;
-        Vector3 currentLineDirection = (rightGrapplePoint - rightGrappleStartPoint.position).normalized;
-        Vector3 rotationAxis = Vector3.Cross(currentLineDirection, idealDirection);
-        float angleDifference = Vector3.Angle(currentLineDirection, idealDirection);
-        
-        totalTorque += rotationAxis * angleDifference * rotationCorrectionForce;
-    }
-
-    // 계산된 총 회전력을 리지드바디에 적용
-    playerRigidbody.AddTorque(totalTorque, ForceMode.Acceleration);
-    // --- 회전 로직 종료 ---
-
-
-    // --- 커브 비행 로직 (A/D 키) ---
-    float horizontalInputGrapple = Input.GetAxis("Horizontal");
-    if (Mathf.Abs(horizontalInputGrapple) > 0.1f)
-    {
-        Vector3 sideForce = playerCamera.transform.right * horizontalInputGrapple * adKeyCurveMultiplier;
-        playerRigidbody.AddForce(Vector3.ClampMagnitude(sideForce, maxSideForce), ForceMode.Acceleration);
-    }
-
-    // --- 속도 제한 ---
-    if (playerRigidbody.velocity.magnitude > maxGrappleSpeed)
-    {
-        playerRigidbody.velocity = playerRigidbody.velocity.normalized * maxGrappleSpeed;
-    }
-}
 
     private void UpdateEffects(bool isCurrentlyFlying)
     {
@@ -308,9 +311,25 @@ public class PlayerController : MonoBehaviour
         isGrounded = Physics.Raycast(transform.position, Vector3.down, groundCheckDistance, Grappleable);
         animator.SetBool("isGrounded", isGrounded);
     }
-        public void OnAttackAnimationEnd()
+    public void OnAttackAnimationEnd()
     {
         isAttack = false;
         animator.SetBool("isAttack", false);
+    }
+
+    // --- 새로운 헬퍼 함수 추가 (클래스 내부, Update 함수 밖) ---
+    // 이 함수가 있어야 grappleableTags 배열을 사용할 수 있습니다.
+    bool IsGrappleableTarget(Collider collider)
+    {
+        if (collider == null) return false;
+
+        foreach (string tag in grappleableTags)
+        {
+            if (collider.CompareTag(tag))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

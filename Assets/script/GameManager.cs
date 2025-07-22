@@ -12,7 +12,7 @@ public class GameManager : MonoBehaviour
     public bool isGameStarted = false;
     public float elapsedTime = 0f;
     public TextMeshProUGUI timerTextInstance;
-    public float successSceneTransitionTime = 10f; // 10초 설정
+    public float successSceneTransitionTime = 60f; // 10초 설정
 
     [Header("Scene Settings")]
     public string mainGameSceneName = "game";

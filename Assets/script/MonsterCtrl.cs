@@ -94,7 +94,6 @@ public class MonsterCtrl : MonoBehaviour
             }
 
             float distance = Vector3.Distance(playerTr.position, monsterTr.position);
-            Debug.Log($"[MonsterCtrl] Distance to Player: {distance:F2} meters.");
 
             // "X" 표시 활성화/비활성화 로직
             if (targetXMarkObject != null)
@@ -104,7 +103,6 @@ public class MonsterCtrl : MonoBehaviour
                     if (!targetXMarkObject.activeSelf) 
                     {
                         targetXMarkObject.SetActive(true);
-                        Debug.Log($"[MonsterCtrl] X Mark activated (Distance: {distance:F2}m)");
                     }
                 }
                 else 
@@ -112,7 +110,6 @@ public class MonsterCtrl : MonoBehaviour
                     if (targetXMarkObject.activeSelf) 
                     {
                         targetXMarkObject.SetActive(false);
-                        Debug.Log($"[MonsterCtrl] X Mark deactivated (Distance: {distance:F2}m)");
                     }
                 }
             }
@@ -254,7 +251,6 @@ public class MonsterCtrl : MonoBehaviour
 
         state = State.DIE;
         isDie = true;
-        Debug.Log("[MonsterCtrl] ForceDeath() called from Player!");
          StartCoroutine(ExecuteDeathNow()); // 바로 죽음 로직 실행
     }
     private IEnumerator ExecuteDeathNow()
@@ -262,7 +258,17 @@ public class MonsterCtrl : MonoBehaviour
         // NavMesh 정지
         if (agent != null && agent.isActiveAndEnabled)
             agent.isStopped = true;
+                Collider col = GetComponent<Collider>();
+        if (col != null) col.enabled = true; // 죽어도 충돌 유지
 
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.useGravity = true;
+            rb.isKinematic = false;
+            rb.velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
         anim.SetTrigger("Die");
 
         yield return new WaitForEndOfFrame(); // 애니메이터 상태 업데이트 기다림

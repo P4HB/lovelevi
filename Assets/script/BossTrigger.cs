@@ -17,9 +17,9 @@ public class BossTrigger : MonoBehaviour
     private bool armoredSpawned = false;
 
 
-    private float colossalSpawnTime = 1000f;
+    private float colossalSpawnTime = 25f;
     private float armoredDelayAfterColossal = 20f;
-    private float gumingoutMusic = 2f;
+    private float gumingoutMusic = 10f;
     private GameObject spawnedColossal;
 
     // === 연출 관련 ===
@@ -37,6 +37,7 @@ public class BossTrigger : MonoBehaviour
     public Camera cinematicCamera;
     public AudioSource musicSource;
     public AudioClip colossalMusic;
+    bool hasPlayedMusic = false;
     void Awake(){
         cinematicCamera.enabled = false;
         mainCamera.enabled = true;
@@ -44,9 +45,10 @@ public class BossTrigger : MonoBehaviour
     void Update()
     {
         elapsedTime += Time.deltaTime;
-        if (elapsedTime >= gumingoutMusic)
+        if (!hasPlayedMusic && elapsedTime >= gumingoutMusic)
         {
-            StartCoroutine(PlayMusicOnceAfterDelay(gumingoutMusic));
+            StartCoroutine(PlayMusicOnceAfterDelay());
+            hasPlayedMusic = true;
         }
         if (!colossalSpawned && elapsedTime >= colossalSpawnTime)
         {
@@ -69,17 +71,25 @@ public class BossTrigger : MonoBehaviour
         }
     }
 
-    IEnumerator PlayMusicOnceAfterDelay(float delay)
-    {
-        yield return new WaitForSeconds(delay);
+    IEnumerator PlayMusicOnceAfterDelay()
+{
+    yield return new WaitForSeconds(0.5f);
 
-        if (!musicSource.isPlaying) // 혹시 모르니 중복 방지
-        {
-            musicSource.clip = colossalMusic;
-            musicSource.Play();
-            Debug.Log("🎶 음악 재생 시작 (코루틴)");
-        }
+    Debug.Log("🎵 코루틴 실행됨");
+
+    if (musicSource != null && colossalMusic != null)
+    {
+        musicSource.Stop(); // 기존 배경음 끄기
+        musicSource.clip = colossalMusic;
+        musicSource.Play();
+        Debug.Log("🎶 colossalMusic 재생 시작됨");
     }
+    else
+    {
+        Debug.LogWarning("🎵 musicSource 또는 colossalMusic이 null입니다.");
+    }
+}
+
     IEnumerator ColossalCinematicSequence()
     {
         // 1. 카메라 전환

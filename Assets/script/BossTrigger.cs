@@ -14,7 +14,7 @@ public class BossTrigger : MonoBehaviour
     private bool armoredSpawned = false;
 
 
-    private float colossalSpawnTime = 15f;
+    private float colossalSpawnTime = 1000f;
     private float armoredDelayAfterColossal = 20f;
     private float gumingoutMusic = 2f;
     private GameObject spawnedColossal;

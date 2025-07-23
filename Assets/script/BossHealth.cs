@@ -5,7 +5,7 @@ using System.Collections;
 public class BossHealth : MonoBehaviour
 {
     [Header("Health Settings")]
-    public int maxHealth = 200;
+    public int maxHealth = 20;
     public int currentHealth;
 
     [Header("UI Settings")]

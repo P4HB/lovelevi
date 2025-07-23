@@ -53,6 +53,10 @@ public class PlayerHealth : MonoBehaviour
     [Tooltip("플레이어가 죽었을 때 재생할 오디오 클립 (예: die.mp3)")] // 새로 추가
     public AudioClip dieSoundClip; // 새로 추가
 
+    [Header("Damage Cooldown Settings")]
+    public float damageCooldown = 1.0f; // 데미지 딜레이 시간 (초)
+    private float lastDamageTime = -Mathf.Infinity; // 마지막으로 데미지를 입은 시간
+
 
     // 게임 시작 시 초기화
     void Start()
@@ -74,30 +78,28 @@ public class PlayerHealth : MonoBehaviour
     // 데미지를 입었을 때 호출되는 함수
     public void TakeDamage(int amount)
     {
-        if (currentHealth <= 0) return; 
+        if (Time.time - lastDamageTime < damageCooldown) return; // 딜레이 체크
 
-        currentHealth -= amount; 
-        currentHealth = Mathf.Max(currentHealth, 0); 
+        lastDamageTime = Time.time; // 데미지 시간 갱신
 
-        UpdateHealthUI(); 
+        if (currentHealth <= 0) return;
 
-        // 피격 사운드 재생 (기존 로직)
+        currentHealth -= amount;
+        currentHealth = Mathf.Max(currentHealth, 0);
+
+        UpdateHealthUI();
+
+        // 사운드
         if (hitAudioSource != null && hitSoundClip != null)
         {
-            hitAudioSource.PlayOneShot(hitSoundClip); 
-        }
-        else
-        {
-            if(hitAudioSource == null) Debug.LogWarning("PlayerHealth: hitAudioSource가 연결되지 않았습니다. 피격 사운드를 재생할 수 없습니다.");
-            if(hitSoundClip == null) Debug.LogWarning("PlayerHealth: hitSoundClip이 연결되지 않았습니다. 피격 사운드를 재생할 수 없습니다.");
+            hitAudioSource.PlayOneShot(hitSoundClip);
         }
 
         if (currentHealth <= 0)
         {
-            Die(); 
+            Die();
         }
     }
-
     // 체력을 회복했을 때 호출되는 함수
     public void Heal(int amount)
     {

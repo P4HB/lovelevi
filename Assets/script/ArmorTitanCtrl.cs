@@ -18,8 +18,8 @@ public class BossMonsterCtrl : MonoBehaviour
     [Header("Boss Skill Settings")]
     public float burstSpeed = 20.0f;           // 폭주 시 속도
     public float burstDuration = 2.0f;         // 폭주 지속 시간 (2초)
-    public float burstCooldown = 5.0f;         // 폭주 쿨타임 (5초)
-    public float attackDelay = 2.5f;           // 공격 후 딜레이
+    public float burstCooldown = 2.0f;         // 폭주 쿨타임 (5초)
+    public float attackDelay = 1f;           // 공격 후 딜레이
 
     private Transform monsterTr;
     private Transform playerTr;
@@ -195,6 +195,19 @@ public class BossMonsterCtrl : MonoBehaviour
         // 죽음 애니메이션이 끝날 때까지 대기
         if (agent != null && agent.isActiveAndEnabled)
             agent.isStopped = true;
+            if (agent != null) agent.enabled = false;
+
+        Collider col = GetComponent<Collider>();
+        if (col != null) col.enabled = true; // 죽어도 충돌 유지
+
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.useGravity = true;
+            rb.isKinematic = false;
+            rb.velocity = Vector3.zero;
+            rb.angularVelocity = Vector3.zero;
+        }
 
         anim.SetTrigger("Die");
 

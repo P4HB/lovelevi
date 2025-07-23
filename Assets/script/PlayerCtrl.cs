@@ -116,6 +116,19 @@ public class PlayerController : MonoBehaviour
                 if (titanPromptTextUI != null)
                     titanPromptTextUI.SetActive(false);
             }
+            GameObject boss = GameObject.FindWithTag("Boss"); // Boss 태그 필수!
+            if (boss != null)
+            {
+                float dist = Vector3.Distance(transform.position, boss.transform.position);
+                if (dist <= 20f) // 공격 범위 제한
+                {
+                    BossHealth BossHealth = boss.GetComponent<BossHealth>();
+                    if (BossHealth != null)
+                    {
+                        BossHealth.TakeDamage(20); // 데미지 20 주기
+                    }
+                }
+            }
         }
         // --- 로직 변경: 갈고리 '발사' 로직 (마우스 클릭) ---
         if (Input.GetMouseButtonDown(0)) // 왼쪽 클릭으로 왼쪽 갈고리 발사/연결

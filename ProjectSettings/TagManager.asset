@@ -9,7 +9,7 @@ TagManager:
   - MonsterHand
   - MonsterFoot
   - Monster
-  - TitanNeck
+  - Boss
   layers:
   - Default
   - TransparentFX

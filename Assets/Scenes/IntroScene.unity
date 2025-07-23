@@ -348,7 +348,7 @@ MonoBehaviour:
   isGameStarted: 0
   elapsedTime: 0
   timerTextInstance: {fileID: 0}
-  successSceneTransitionTime: 10
+  successSceneTransitionTime: 2000
   mainGameSceneName: game
   endSceneName: EndScene
   successSceneName: SuccessScene

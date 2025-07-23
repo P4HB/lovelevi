@@ -1,193 +1,263 @@
 using UnityEngine;
-using UnityEngine.UI; // UI 요소를 사용하기 위해 추가
-using TMPro; // TextMeshPro 사용을 위해 추가
-using System.Collections;
+using UnityEngine.UI;
+using TMPro; 
+using System.Collections; // 코루틴을 사용하지 않는다면 이 줄도 제거 가능
 
 public class PlayerHealth : MonoBehaviour
 {
     [Header("Health Settings")]
     [Tooltip("플레이어의 최대 체력입니다.")]
-    public int maxHealth = 100; // 플레이어의 최대 체력
+    public int maxHealth = 100; 
     
     [Tooltip("플레이어의 현재 체력입니다.")]
-    public int currentHealth;   // 플레이어의 현재 체력
+    public int currentHealth;   
 
     [Header("UI Settings")]
     [Tooltip("체력 바 UI (선택 사항)")]
-    public Slider healthBarSlider; // 체력 바 UI (Unity UI Slider 컴포넌트)
+    public Slider healthBarSlider; 
     
     [Tooltip("체력 텍스트 UI (선택 사항)")]
-    public TextMeshProUGUI healthText; // 체력 텍스트 UI (Unity UI Text 컴포넌트)
+    public TextMeshProUGUI healthText; 
+
+    // === 피격 효과 UI (삭제) ===
+    // [Tooltip("피격 효과 테두리 이미지 (화면 테두리용 스프라이트를 할당)")]
+    // public Image hitEffectBorderImage; // 삭제
+    // public float hitEffectFadeInDuration = 0.1f; // 삭제
+    // public float hitEffectStayDuration = 0.2f;   // 삭제
+    // public float hitEffectFadeOutDuration = 0.5f; // 삭제
+    // public float maxHitEffectAlpha = 0.6f; // 삭제
 
     [Header("Collision Damage")]
     [Tooltip("건물 충돌 시 받는 데미지 양")]
-    public int buildingCollisionDamage = 10; // 건물 충돌 시 받는 데미지
-
+    public int buildingCollisionDamage = 10; 
     [Tooltip("데미지를 줄 건물 태그")]
-    public string buildingTag = "Building"; // 데미지를 줄 건물 태그 (새로 추가)
+    public string buildingTag = "Building"; 
 
     [Tooltip("몬스터 본체 충돌 시 받는 데미지 양")]
     public int monsterCollisionDamage = 20; 
     [Tooltip("데미지를 줄 몬스터 태그")]
-    public string monsterTag = "Monster"; // 몬스터 본체 태그
+    public string monsterTag = "Monster"; 
 
     // === 몬스터 부위 콜라이더 이름 (새로 추가) ===
     [Header("Monster Part Names")]
-    public string monsterHandName = "Hitbox_Hand_L"; // 예시: 왼쪽 손 이름
-    public string monsterFootName = "Hitbox_Foot_L"; // 예시: 왼쪽 발 이름
-    // (오른쪽 손발도 포함해야 하므로, 배열로 바꾸거나 더 많은 변수 선언)
-    public string[] damageableMonsterPartNames; // <<< 여기에 모든 히트박스 이름 추가 (Inspector에서)
+    public string monsterHandName = "Hitbox_Hand_L"; 
+    public string monsterFootName = "Hitbox_Foot_L"; 
+    public string[] damageableMonsterPartNames; 
 
-    // [Tooltip("몬스터 손/발 태그들")]
-    // public string monsterHandTag = "MonsterHand"; // 몬스터 손 태그 (새로 추가)
-    // public string monsterFootTag = "MonsterFoot"; // 몬스터 발 태그 (새로 추가)
-    
+    [Header("Audio Settings")] // 새로 추가
+    [Tooltip("피격 사운드를 재생할 AudioSource 컴포넌트")] // 새로 추가
+    public AudioSource hitAudioSource; // 새로 추가
+    [Tooltip("피격 시 재생할 오디오 클립 (예: sick.mp3)")] // 새로 추가
+    public AudioClip hitSoundClip; // 새로 추가
+
+    [Tooltip("플레이어가 죽었을 때 재생할 오디오 클립 (예: die.mp3)")] // 새로 추가
+    public AudioClip dieSoundClip; // 새로 추가
+
 
     // 게임 시작 시 초기화
     void Start()
     {
-        ResetHealth(); // 게임 시작 시 체력 초기화
+        currentHealth = maxHealth;
+        UpdateHealthUI(); 
+        
+        // AudioSource 컴포넌트가 Inspector에 연결되지 않았다면 자동으로 찾기 (안전 장치)
+        if (hitAudioSource == null)
+        {
+            hitAudioSource = GetComponent<AudioSource>();
+            if (hitAudioSource == null)
+            {
+                Debug.LogWarning("PlayerHealth: Player 오브젝트에 AudioSource 컴포넌트가 없습니다. 피격 사운드를 재생할 수 없습니다.");
+            }
+        }
     }
 
     // 데미지를 입었을 때 호출되는 함수
     public void TakeDamage(int amount)
     {
-        if (currentHealth <= 0) return; // 이미 죽었으면 더 이상 데미지 받지 않음
+        if (currentHealth <= 0) return; 
 
-        currentHealth -= amount; // 현재 체력에서 데미지 양만큼 감소
-        currentHealth = Mathf.Max(currentHealth, 0); // 체력이 0 미만으로 내려가지 않도록 보정
+        currentHealth -= amount; 
+        currentHealth = Mathf.Max(currentHealth, 0); 
 
-        Debug.Log("Player took " + amount + " damage. Current Health: " + currentHealth);
-        UpdateHealthUI(); // UI 업데이트
+        UpdateHealthUI(); 
+
+        // 피격 사운드 재생 (기존 로직)
+        if (hitAudioSource != null && hitSoundClip != null)
+        {
+            hitAudioSource.PlayOneShot(hitSoundClip); 
+        }
+        else
+        {
+            if(hitAudioSource == null) Debug.LogWarning("PlayerHealth: hitAudioSource가 연결되지 않았습니다. 피격 사운드를 재생할 수 없습니다.");
+            if(hitSoundClip == null) Debug.LogWarning("PlayerHealth: hitSoundClip이 연결되지 않았습니다. 피격 사운드를 재생할 수 없습니다.");
+        }
 
         if (currentHealth <= 0)
         {
-            Die(); // 체력이 0이 되면 죽음 처리
+            Die(); 
         }
     }
 
     // 체력을 회복했을 때 호출되는 함수
     public void Heal(int amount)
     {
-        if (currentHealth >= maxHealth) return; // 이미 최대 체력이면 회복하지 않음
+        if (currentHealth >= maxHealth) return; 
 
-        currentHealth += amount; // 현재 체력에 회복 양만큼 증가
-        currentHealth = Mathf.Min(currentHealth, maxHealth); // 체력이 최대 체력을 초과하지 않도록 보정
+        currentHealth += amount; 
+        currentHealth = Mathf.Min(currentHealth, maxHealth); 
 
-        Debug.Log("Player healed " + amount + ". Current Health: " + currentHealth);
-        UpdateHealthUI(); // UI 업데이트
+        UpdateHealthUI(); 
     }
 
+    // UpdateHealthUI 함수 (기존과 동일, 색상 로직 포함)
     void UpdateHealthUI()
     {
         if (healthBarSlider != null)
         {
             healthBarSlider.maxValue = maxHealth;
             healthBarSlider.value = currentHealth;
+
+            // 체력에 따라 색상 변경 (0~30 빨강, 31~60 노랑, 61~100 초록)
+            Image fillImage = healthBarSlider.fillRect.GetComponent<Image>();
+            if (fillImage != null)
+            {
+                if (currentHealth >= 61) // 61 ~ 100
+                {
+                    fillImage.color = Color.green;
+                }
+                else if (currentHealth >= 31) // 31 ~ 60
+                {
+                    fillImage.color = Color.yellow;
+                }
+                else // 0 ~ 30
+                {
+                    fillImage.color = Color.red;
+                }
+            }
         }
 
         if (healthText != null)
         {
-            // TextMeshProUGUI는 .text 속성을 사용합니다.
-            healthText.text = "HP: " + currentHealth + " / " + maxHealth; 
+            healthText.text = "HP: " + Mathf.CeilToInt(currentHealth) + " / " + Mathf.CeilToInt(maxHealth); 
+            
+            // 텍스트 색상도 체력에 따라 변경 (HealthBar와 동일한 로직)
+            if (currentHealth >= 61) // 61 ~ 100
+            {
+                healthText.color = Color.green;
+            }
+            else if (currentHealth >= 31) // 31 ~ 60
+            {
+                healthText.color = Color.yellow;
+            }
+            else // 0 ~ 30
+            {
+                healthText.color = Color.red;
+            }
         }
     }
 
     // 플레이어가 죽었을 때 호출되는 함수
     void Die()
     {
-        Debug.Log("Player has died!");
-        // 여기에 플레이어가 죽었을 때의 로직을 추가합니다.
-        // 예: 플레이어 오브젝트 비활성화
-        // gameObject.SetActive(false); 
+      
+        // === PlayerController 스크립트 비활성화 (즉시 움직임 중단) ===
+        PlayerController playerController = GetComponent<PlayerController>();
+        if (playerController != null)
+        {
+            playerController.enabled = false; // PlayerController 컴포넌트 비활성화
 
-        // GameManager 인스턴스에 안전하게 접근하는 로직 강화
-        // 코루틴으로 한 프레임 지연시켜 GameManager가 초기화될 시간을 줍니다.
-        StartCoroutine(HandleGameOverAfterDelay());
+        }
+        else
+        {
+            Debug.LogWarning("PlayerController component not found on Player GameObject to disable it.");
+        }
+
+        // 죽음 사운드 재생 (기존 로직)
+        if (hitAudioSource != null && dieSoundClip != null)
+        {
+            hitAudioSource.PlayOneShot(dieSoundClip); 
+        }
+        else
+        {
+            if(hitAudioSource == null) Debug.LogWarning("PlayerHealth: hitAudioSource가 연결되지 않았습니다. 죽음 사운드를 재생할 수 없습니다.");
+            if(dieSoundClip == null) Debug.LogWarning("PlayerHealth: dieSoundClip이 연결되지 않았습니다. 죽음 사운드를 재생할 수 없습니다.");
+        }
+
+        // 씬 로드 및 오브젝트 비활성화를 위한 코루틴 시작
+        StartCoroutine(HandleDeathAndSceneLoad());
     }
 
-    private IEnumerator HandleGameOverAfterDelay()
+    // === 죽음 처리 및 씬 로드를 위한 코루틴 (수정) ===
+    private IEnumerator HandleDeathAndSceneLoad()
     {
-        // 다음 프레임까지 기다립니다. (GameManager가 Awake/Start를 마칠 시간을 줍니다.)
-        yield return null; 
+        // 1. 죽음 사운드 재생 (PlayerHealth.Die()에서 이미 호출)
+        // 여기서 다시 호출할 필요는 없지만, 만약 Die()에서 PlayOneShot이 실행되기 전에
+        // 이 코루틴이 시작될 가능성이 있다면 여기에 한번 더 PlayOneShot을 넣을 수 있습니다.
+        // 현재는 Die()에서 이미 호출되므로 생략합니다.
 
-        // 코루틴이 시작된 후, 그리고 씬 전환 직전에 플레이어 오브젝트를 비활성화합니다.
-        gameObject.SetActive(false); // <<< 이 줄을 여기로 옮깁니다!
+        // 2. 사운드 재생 시간을 벌기 위해 잠시 대기
+        // 사운드 클립의 길이에 맞춰 기다리는 것이 가장 정확합니다.
+        float delayTime = 1.5f; // 기본 대기 시간 (die.mp3 길이에 따라 조절)
+        if (dieSoundClip != null && hitAudioSource != null && hitAudioSource.enabled)
+        {
+            delayTime = dieSoundClip.length; // 사운드 길이만큼 대기
+            // 사운드가 아직 재생 중일 수 있으므로 짧은 지연을 추가 (선택 사항)
+            if (delayTime < 0.1f) delayTime = 0.1f; // 최소 대기 시간
+        }
+        yield return new WaitForSeconds(delayTime); 
 
-        // GameManager 인스턴스가 존재하면 게임 종료 함수 호출
+        // 3. GameManager.EndGame() 호출 (씬 전환 및 BGM 정지 로직 포함)
         if (GameManager.Instance != null)
         {
-            GameManager.Instance.EndGame();
+            GameManager.Instance.EndGame(); // GameManager의 EndGame 함수 호출
         }
         else
         {
             Debug.LogError("FATAL ERROR: GameManager.Instance를 여전히 찾을 수 없습니다! 게임 종료 처리 실패.");
-            // 최후의 수단: 직접 씬 로드 (GameManager 없이) - 이는 임시 방편입니다.
-            // UnityEngine.SceneManagement.SceneManager.LoadScene("EndScene"); 
+        }
+        
+        // 4. 모든 것이 처리된 후 플레이어 오브젝트 비활성화 (가장 마지막!)
+        // 이렇게 해야 코루틴이 끝까지 실행될 수 있습니다.
+        gameObject.SetActive(false); 
+    }
+
+    void OnCollisionEnter(Collision collision)
+    {
+       string collidedTag = collision.gameObject.tag;
+       string collidedColliderName = collision.collider.name; 
+
+       if (collidedTag == buildingTag)
+       {
+           TakeDamage(buildingCollisionDamage);
+       }
+       else if (IsDamageableMonsterPart(collidedColliderName)) 
+       {
+           TakeDamage(monsterCollisionDamage); 
+       }
+    }
+
+    // OnTriggerEnter 함수 (기존과 동일)
+    void OnTriggerEnter(Collider other)
+    {
+        string collidedTag = other.gameObject.tag;
+        Debug.Log($"<color=green>[OnTriggerEnter]</color> Player entered Trigger: {other.gameObject.name}, Tag: {collidedTag}, Collider: {other.name}");
+
+        if (collidedTag == "Monster") 
+        {
+            Debug.Log($"Player touched Monster Body (Trigger): {other.gameObject.name}");
         }
     }
 
-        // --- OnCollisionEnter 함수 (Physics Layer Matrix에서 서로 충돌하고 Is Trigger가 false인 콜라이더끼리 충돌 시) ---
-    void OnCollisionEnter(Collision collision)
-    {
-       string collidedTag = collision.gameObject.tag; // 충돌한 GameObject의 태그
-       string collidedColliderName = collision.collider.name; // 충돌한 Collider의 이름 <<< 이 변수를 사용
-
-       Debug.Log($"<color=blue>[OnCollisionEnter]</color> Player collided with: {collision.gameObject.name}, Tag: {collidedTag}, Collider: {collidedColliderName}");
-
-       // 1. 건물 충돌 데미지
-       if (collidedTag == buildingTag)
-       {
-           Debug.Log($"Player collided with Building: {collision.gameObject.name}, Taking {buildingCollisionDamage} damage.");
-           TakeDamage(buildingCollisionDamage);
-       }
-       // 2. 몬스터 부위 충돌 데미지 (콜라이더 이름으로 판단)
-       else if (IsDamageableMonsterPart(collidedColliderName)) // <<< 변경된 부분
-       {
-           Debug.Log($"Player hit by Monster Part: {collidedColliderName}, Taking {monsterCollisionDamage} damage."); // 데미지 메시지 수정
-           TakeDamage(monsterCollisionDamage); // 데미지 적용
-       }
-    }
-
-    // --- 새로운 헬퍼 함수 추가 (클래스 내부, OnCollisionEnter 함수 밖) ---
+    // IsDamageableMonsterPart 함수 (기존과 동일)
     bool IsDamageableMonsterPart(string colliderName)
     {
         foreach (string name in damageableMonsterPartNames)
         {
-            if (colliderName == name) // 콜라이더 이름이 배열에 있는지 확인
+            if (colliderName == name) 
             {
                 return true;
             }
         }
         return false;
     }
-
-    // --- OnTriggerEnter 함수 (Physics Layer Matrix에서 서로 충돌하고 최소 하나가 Is Trigger인 콜라이더끼리 충돌 시) ---
-    void OnTriggerEnter(Collider other) // OnCollisionEnter와 다른 콜백입니다.
-    {
-        string collidedTag = other.gameObject.tag;
-        // <<< 이 로그가 OnTriggerEnter가 호출되었음을 명확히 보여줍니다.
-        Debug.Log($"<color=green>[OnTriggerEnter]</color> Player entered Trigger: {other.gameObject.name}, Tag: {collidedTag}, Collider: {other.name}");
-
-        // 여기서는 데미지를 주지 않고, MonsterCtrl에서 Trigger를 통해 플레이어와 접촉했음을 알릴 수 있습니다.
-        // 몬스터 본체(Is Trigger = true)와의 접촉을 여기서 감지할 수 있습니다.
-        if (collidedTag == "Monster") // 몬스터 본체에 Is Trigger = true가 설정되어 있을 때
-        {
-            Debug.Log($"Player touched Monster Body (Trigger): {other.gameObject.name}");
-            // 특정 로직 (예: 몬스터의 공격 애니메이션 트리거 등)
-        }
-    }
-
-    // === 새로 추가된 체력 초기화 함수 ===
-    public void ResetHealth()
-    {
-        currentHealth = maxHealth;
-        // 플레이어 오브젝트 활성화 (죽었을 때 비활성화했다면)
-        // if (playerModel != null) playerModel.SetActive(true);
-        // else gameObject.SetActive(true); // 전체 오브젝트 활성화
-
-        UpdateHealthUI(); // UI 업데이트
-        Debug.Log($"Player Health Reset: {currentHealth}/{maxHealth}");
-    }
-
 }

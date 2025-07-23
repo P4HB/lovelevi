@@ -136,56 +136,57 @@ public class GrapplingTest : MonoBehaviour
         Ray ray = Camera.main.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2, 0));
         RaycastHit hit;
         bool hitSomething = Physics.Raycast(ray, out hit, Mathf.Infinity, ~ignoreLayers); 
-// 충돌한 오브젝트가 줄을 걸 수 있는 대상인지 확인하는 헬퍼 함수 호출
-    bool canGrappleTarget = IsGrappleableTarget(hit.collider); // 이 라인은 Update 함수 내부에 있어야 합니다.
 
-    if (crosshairImage != null)
-    {
-        if (hitSomething && canGrappleTarget) // hit.collider.CompareTag("Tree") 대신 canGrappleTarget 사용
-        {
-            crosshairImage.color = grappleableCrosshairColor;
-        }
-        else
-        {
-            crosshairImage.color = defaultCrosshairColor;
-        }
-    }
+        // 충돌한 오브젝트가 줄을 걸 수 있는 대상인지 확인하는 헬퍼 함수 호출
+        bool canGrappleTarget = IsGrappleableTarget(hit.collider); // 이 라인은 Update 함수 내부에 있어야 합니다.
 
-    // --- 왼쪽 갈고리 발사 로직 (마우스 왼클릭) ---
-    if (Input.GetMouseButtonDown(0))
-    {
-        if (hitSomething && canGrappleTarget) // hit.collider.CompareTag("Tree") 대신 canGrappleTarget 사용
+        if (crosshairImage != null)
         {
-            leftGrapplePoint = hit.point;
-            isLeftGrappling = true;
-            if (leftLine != null)
-                leftLine.positionCount = 2;
+            if (hitSomething && canGrappleTarget) // hit.collider.CompareTag("Tree") 대신 canGrappleTarget 사용
+            {
+                crosshairImage.color = grappleableCrosshairColor;
+            }
+            else
+            {
+                crosshairImage.color = defaultCrosshairColor;
+            }
         }
-        else
-        {
-            isLeftGrappling = false;
-            if (leftLine != null)
-                leftLine.positionCount = 0;
-        }
-    }
 
-    // --- 오른쪽 갈고리 발사 로직 (마우스 우클릭) ---
-    if (Input.GetMouseButtonDown(1))
-    {
-        if (hitSomething && canGrappleTarget) // hit.collider.CompareTag("Tree") 대신 canGrappleTarget 사용
+        // --- 왼쪽 갈고리 발사 로직 (마우스 왼클릭) ---
+        if (Input.GetMouseButtonDown(0))
         {
-            rightGrapplePoint = hit.point;
-            isRightGrappling = true;
-            if (rightLine != null)
-                rightLine.positionCount = 2;
+            if (hitSomething && canGrappleTarget) // hit.collider.CompareTag("Tree") 대신 canGrappleTarget 사용
+            {
+                leftGrapplePoint = hit.point;
+                isLeftGrappling = true;
+                if (leftLine != null)
+                    leftLine.positionCount = 2;
+            }
+            else
+            {
+                isLeftGrappling = false;
+                if (leftLine != null)
+                    leftLine.positionCount = 0;
+            }
         }
-        else
+
+        // --- 오른쪽 갈고리 발사 로직 (마우스 우클릭) ---
+        if (Input.GetMouseButtonDown(1))
         {
-            isRightGrappling = false;
-            if (rightLine != null)
-                rightLine.positionCount = 0;
+            if (hitSomething && canGrappleTarget) // hit.collider.CompareTag("Tree") 대신 canGrappleTarget 사용
+            {
+                rightGrapplePoint = hit.point;
+                isRightGrappling = true;
+                if (rightLine != null)
+                    rightLine.positionCount = 2;
+            }
+            else
+            {
+                isRightGrappling = false;
+                if (rightLine != null)
+                    rightLine.positionCount = 0;
+            }
         }
-    }
         
         // --- 라인 렌더링 ---
         if (isLeftGrappling)
@@ -234,6 +235,7 @@ public class GrapplingTest : MonoBehaviour
             isLeftGrappling = false;
             leftLine.positionCount = 0;
         }
+
         if (Input.GetMouseButtonUp(1))
         {
             isRightGrappling = false;
@@ -243,7 +245,6 @@ public class GrapplingTest : MonoBehaviour
         // --- WASD 이동 및 회전 로직 ---
         bool isGrapplingActive = (isLeftGrappling || isRightGrappling);
         bool isHoldingSpaceWhileGrappling = isGrapplingActive && Input.GetKey(KeyCode.Space);
-
 
         if (!isHoldingSpaceWhileGrappling) 
         {

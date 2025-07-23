@@ -12,7 +12,7 @@ public class GameManager : MonoBehaviour
     public bool isGameStarted = false;
     public float elapsedTime = 0f;
     public TextMeshProUGUI timerTextInstance;
-    public float successSceneTransitionTime = 10f; // 10초 설정
+    public float successSceneTransitionTime = 60f; // 10초 설정
 
     [Header("Scene Settings")]
     public string mainGameSceneName = "game";
@@ -71,7 +71,6 @@ public class GameManager : MonoBehaviour
             // 10초가 지나면 Success Scene으로 이동
             if (elapsedTime >= successSceneTransitionTime)
             {
-                Debug.Log($"[GameManager] {successSceneTransitionTime}초 경과! Success Scene으로 이동합니다.");
                 isGameStarted = false; // 게임 종료 처리
                 SceneManager.LoadScene(successSceneName);
             }

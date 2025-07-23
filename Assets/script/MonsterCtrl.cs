@@ -12,20 +12,25 @@ public class MonsterCtrl : MonoBehaviour
     public float attackDist = 20.0f;
     public bool isDie = false;
 
+    // === "X" 표시 관련 변수 ===
+    [Header("UI & Effects")]
+    public GameObject targetXMarkObject; 
+    public float xMarkDisplayDistance = 20f; 
+
     private Transform monsterTr;
     private Transform playerTr;
     private NavMeshAgent agent;
     private Animator anim;
 
     private readonly int hashTrace = Animator.StringToHash("IsTrace");
-    private readonly int hashAttack = Animator.StringToHash("IsAttack");
+    private readonly int hashAttack = Animator.StringToHash("IsAttack"); // 오타 수정: int 대신 hashAttack
     private readonly int hashHit = Animator.StringToHash("Hit");
     private readonly int hashPlayerDie = Animator.StringToHash("PlayerDie");
     private readonly int hashSpeed = Animator.StringToHash("Speed");
     private readonly int hashDie = Animator.StringToHash("Die");
 
     private GameObject bloodEffect;
-    private int hp = 100;
+    private int hp = 100; // CS0414 경고는 이 변수가 사용되지 않아서 뜨는 것이므로, 주석 처리하거나 사용하면 사라집니다.
 
     // void OnEnable()
     // {
@@ -41,7 +46,7 @@ public class MonsterCtrl : MonoBehaviour
     {
         monsterTr = transform;
 
-        GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+        GameObject playerObj = GameObject.FindGameObjectWithTag("Player"); 
         if (playerObj != null)
         {
             playerTr = playerObj.transform;
@@ -54,10 +59,15 @@ public class MonsterCtrl : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         anim = GetComponent<Animator>();
 
-        // bloodEffect = Resources.Load<GameObject>("BloodSprayEffect");
+        // bloodEffect = Resources.Load<GameObject>("BloodSprayEffect"); // 사용하려면 주석 해제
 
         StartCoroutine(CheckMonsterState());
         StartCoroutine(MonsterAction());
+
+        if (targetXMarkObject == null)
+        {
+            Debug.LogWarning("MonsterCtrl: targetXMarkObject가 연결되지 않았습니다. 인스펙터에 연결해주세요.");
+        }
     }
 
     IEnumerator CheckMonsterState()
@@ -68,156 +78,219 @@ public class MonsterCtrl : MonoBehaviour
 
             if (state == State.DIE) yield break;
 
-            if (playerTr == null) continue;
+            if (playerTr == null) 
+            {
+                GameObject playerObj = GameObject.FindGameObjectWithTag("Player");
+                if (playerObj != null)
+                {
+                    playerTr = playerObj.transform;
+                    Debug.Log("[MonsterCtrl] Player Transform Found via Tag.");
+                }
+                else
+                {
+                    Debug.LogWarning("MonsterCtrl: Player 오브젝트를 찾을 수 없어 거리 계산을 건너뜁니다. 'Player' 태그 확인 필요.");
+                    continue;
+                }
+            }
 
             float distance = Vector3.Distance(playerTr.position, monsterTr.position);
+            Debug.Log($"[MonsterCtrl] Distance to Player: {distance:F2} meters.");
 
-            if (distance <= attackDist) state = State.ATTACK;
-            else if (distance <= traceDist) state = State.TRACE;
-            else state = State.IDLE;
-        }
-    }
-
-IEnumerator MonsterAction()
-{
-    while (!isDie)
-    {
-        switch (state)
-        {
-            case State.IDLE:
-                if (agent != null && agent.isActiveAndEnabled)
-                    agent.isStopped = true;
-
-                anim.SetBool(hashTrace, false);
-                anim.SetBool(hashAttack, false);
-                break;
-
-            case State.TRACE:
-                if (agent != null && agent.isActiveAndEnabled && playerTr != null)
+            // "X" 표시 활성화/비활성화 로직
+            if (targetXMarkObject != null)
+            {
+                if (distance <= xMarkDisplayDistance && !isDie) 
                 {
-                    if (agent.isOnNavMesh)
+                    if (!targetXMarkObject.activeSelf) 
                     {
-                        agent.SetDestination(playerTr.position);
-                        agent.isStopped = false;
+                        targetXMarkObject.SetActive(true);
+                        Debug.Log($"[MonsterCtrl] X Mark activated (Distance: {distance:F2}m)");
                     }
                 }
-                anim.SetBool(hashTrace, true);
-                anim.SetBool(hashAttack, false);
-                break;
+                else 
+                {
+                    if (targetXMarkObject.activeSelf) 
+                    {
+                        targetXMarkObject.SetActive(false);
+                        Debug.Log($"[MonsterCtrl] X Mark deactivated (Distance: {distance:F2}m)");
+                    }
+                }
+            }
+            
+            // T 버튼 눌렀을 때 몬스터 죽음 로직
+            if (Input.GetKeyDown(KeyCode.T) && distance <= xMarkDisplayDistance && !isDie)
+            {
+                state = State.DIE; // 상태를 DIE로 변경
+                isDie = true; // 죽음 플래그 설정
+                Debug.Log($"[MonsterCtrl] T key pressed! Monster state set to DIE.");
+                // 이 코루틴(CheckMonsterState)은 isDie가 true가 되면 자연스럽게 종료됩니다.
+            }
 
-            case State.ATTACK:
-                if (agent != null && agent.isActiveAndEnabled)
-                    agent.isStopped = true;
+            // 몬스터 상태 변경 로직
+            if (!isDie) 
+            {
+                if (distance <= attackDist) state = State.ATTACK;
+                else if (distance <= traceDist) state = State.TRACE;
+                else state = State.IDLE;
+            }
+        }
+    }
 
-                anim.SetBool(hashTrace, false);
-                anim.SetBool(hashAttack, true);
-                break;
+    IEnumerator MonsterAction()
+    {
+        while (!isDie) // isDie가 true가 되면 코루틴 종료
+        {
+            switch (state)
+            {
+                case State.IDLE:
+                    if (agent != null && agent.isActiveAndEnabled)
+                        agent.isStopped = true;
 
-            case State.DIE:
-                yield break;
+                    anim.SetBool(hashTrace, false);
+                    anim.SetBool(hashAttack, false);
+                    break;
+
+                case State.TRACE:
+                    if (agent != null && agent.isActiveAndEnabled && playerTr != null)
+                    {
+                        if (agent.isOnNavMesh)
+                        {
+                            agent.SetDestination(playerTr.position);
+                            agent.isStopped = false;
+                        }
+                        else 
+                        {
+                            agent.isStopped = true; 
+                        }
+                    }
+                    else if (agent != null) 
+                    {
+                        agent.isStopped = true;
+                    }
+
+                    anim.SetBool(hashTrace, true);
+                    anim.SetBool(hashAttack, false);
+                    break;
+
+                case State.ATTACK:
+                    if (agent != null && agent.isActiveAndEnabled)
+                        agent.isStopped = true;
+
+                    anim.SetBool(hashTrace, false);
+                    anim.SetBool(hashAttack, true);
+                    break;
+
+                case State.DIE: // 몬스터가 죽음 상태가 되었을 때
+                    isDie = true; 
+
+                    if (agent != null && agent.isActiveAndEnabled)
+                        agent.isStopped = true; // NavMeshAgent 정지
+
+                    // anim.SetTrigger(hashDie); // 죽음 애니메이션 트리거
+
+                    anim.SetBool(hashDie, true);
+                    // === 여기를 수정합니다: 애니메이션 이벤트 대신 코루틴으로 호출 ===
+                    // 현재 재생될 (또는 전환될) Die 애니메이션 클립의 길이를 가져옵니다.
+                    // 정확한 길이를 얻기 위해 약간의 지연을 줄 수 있습니다.
+                    yield return new WaitForEndOfFrame(); // 다음 프레임까지 기다려 애니메이터 상태가 업데이트되도록 함
+                    float dieAnimationLength = anim.GetCurrentAnimatorStateInfo(0).length;
+                    StartCoroutine(ExecuteOnDeathAnimationEndAfterDelay(dieAnimationLength));
+                    // =============================================================
+                    
+                    yield break; // MonsterAction 코루틴 종료
+            }
+
+            yield return new WaitForSeconds(0.3f);
+        }
+    }
+
+    // --- OnDeathAnimationEnd() 함수 (이전과 동일) ---
+    // 이 함수는 이제 애니메이션 이벤트 대신 코루틴으로 호출됩니다.
+    public void OnDeathAnimationEnd()
+    {
+        Debug.Log("[MonsterCtrl] OnDeathAnimationEnd() - Death animation ended. Deactivating Monster.");
+        
+        // 몬스터의 모든 콜라이더 비활성화
+        Collider[] allColliders = GetComponentsInChildren<Collider>(); 
+        foreach (Collider col in allColliders)
+        {
+            col.enabled = false;
         }
 
-        yield return new WaitForSeconds(0.3f);
+        // Rigidbody를 Is Kinematic = true로 설정하여 물리 엔진에서 제거
+        Rigidbody rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = true;
+            rb.velocity = Vector3.zero; 
+            rb.angularVelocity = Vector3.zero; 
+        }
+        
+        // NavMeshAgent가 있다면 비활성화
+        if (agent != null && agent.isActiveAndEnabled)
+        {
+            agent.enabled = false;
+        }
+
+        // X 마크 오브젝트도 비활성화
+        if (targetXMarkObject != null)
+        {
+            targetXMarkObject.SetActive(false);
+        }
+
+        // 몬스터 오브젝트 자체 비활성화 (가장 마지막)
+        gameObject.SetActive(false); 
+
+        // 몬스터가 죽었을 때 추가적인 게임 로직 (예: 점수 부여 등)
+        // if (GameManager.Instance != null)
+        // {
+        //     GameManager.Instance.AddScore(100);
+        // }
     }
-}
 
+    // === 새로 추가된 코루틴 함수: 일정 시간 후 OnDeathAnimationEnd 호출 ===
+    private IEnumerator ExecuteOnDeathAnimationEndAfterDelay(float animationLength)
+    {
+        // 애니메이션이 재생될 시간을 기다립니다.
+        // 죽음 애니메이션 길이에 약간의 여유 시간을 추가하여 애니메이션이 완전히 끝난 후 호출되도록 합니다.
+        yield return new WaitForSeconds(animationLength + 0.1f); // 0.1초는 여유 시간, 필요에 따라 조절
 
-    // void OnCollisionEnter(Collision coll)
-    // {
-    //     if (coll.collider.CompareTag("BULLET"))
-    //     {
-    //         Destroy(coll.gameObject);
-    //         anim.SetTrigger(hashHit);
+        // OnDeathAnimationEnd 함수 호출
+        OnDeathAnimationEnd(); 
+    }
 
-    //         Vector3 pos = coll.GetContact(0).point;
-    //         Quaternion rot = Quaternion.LookRotation(-coll.GetContact(0).normal);
-    //         ShowBloodEffect(pos, rot);
+    // --- OnTriggerEnter 함수 (기존) ---
+    void OnTriggerEnter(Collider other) 
+    {
+        string collidedTag = other.gameObject.tag;
+        // ... (로그 및 로직) ...
+        if (other.CompareTag("BULLET")) // 총알과 충돌 시
+        {
+            Destroy(other.gameObject); 
+            anim.SetTrigger(hashHit); 
+            // ShowBloodEffect(other.transform.position, Quaternion.identity); // 혈흔 효과 사용시 주석 해제
+            hp -= 10; // HP 감소
+            if (hp <= 0) 
+            {
+                state = State.DIE; // HP가 0 이하면 죽음 상태로 전환
+                isDie = true;
+            }
+        }
+    }
 
-    //         hp -= 10;
-    //         if (hp <= 0) state = State.DIE;
-    //     }
-    // }
-
-    // void ShowBloodEffect(Vector3 pos, Quaternion rot)
-    // {
-    //     GameObject blood = Instantiate(bloodEffect, pos, rot, monsterTr);
-    //     Destroy(blood, 1.0f);
-    // }
-
-    // void OnDrawGizmos()
-    // {
-    //     if (state == State.TRACE)
-    //     {
-    //         Gizmos.color = Color.blue;
-    //         Gizmos.DrawWireSphere(transform.position, traceDist);
-    //     }
-    //     if (state == State.ATTACK)
-    //     {
-    //         Gizmos.color = Color.red;
-    //         Gizmos.DrawWireSphere(transform.position, attackDist);
-    //     }
-    // }
-
+    // --- OnCollisionEnter 함수 (기존) ---
+    void OnCollisionEnter(Collision collision)
+    {
+        string collidedTag = collision.gameObject.tag;
+        // ... (로그 및 로직) ...
+    }
 
     void OnPlayerDie()
     {
         StopAllCoroutines();
-        agent.isStopped = true;
+        if (agent != null) 
+            agent.isStopped = true;
         anim.SetFloat(hashSpeed, Random.Range(0.8f, 1.2f));
         anim.SetTrigger(hashPlayerDie);
     }
-
-    // --- OnTriggerEnter 함수 (수정된 부분) ---
-    void OnTriggerEnter(Collider other) // 'coll' 대신 'other' 사용 (관례)
-    {
-        string collidedTag = other.gameObject.tag;
-        // <<< 이 로그가 OnTriggerEnter가 호출되었음을 명확히 보여줍니다.
-        Debug.Log($"<color=green>[Monster OnTriggerEnter]</color> Monster detected Trigger: {other.gameObject.name}, Tag: {collidedTag}");
-
-        // 플레이어와 충돌했는지 확인 (PlayerHealth 스크립트 연결을 가정)
-        if (other.CompareTag("Player"))
-        {
-            // 이 로직은 PlayerHealth에서 처리하므로, 여기서는 몬스터가 플레이어를 '감지'했다는 역할만 합니다.
-            // 몬스터가 플레이어를 감지했음을 알려 AI 상태 전환 등에 사용될 수 있습니다.
-            Debug.Log($"Monster detected Player (Trigger): {other.gameObject.name}");
-        }
-        else if (other.CompareTag("BULLET")) // 총알과 충돌 시
-        {
-            Destroy(other.gameObject); 
-            anim.SetTrigger(hashHit); 
-            
-            // ... (bloodEffect, hp 감소 로직) ...
-            
-            Debug.Log($"Monster hit by BULLET! Monster HP: {hp}");
-        }
-    }
-
-    // OnCollisionEnter 함수도 추가하여 어떤 충돌이 발생하는지 명확히 확인
-    void OnCollisionEnter(Collision collision)
-    {
-        string collidedTag = collision.gameObject.tag;
-        // <<< 이 로그가 OnCollisionEnter가 호출되었음을 명확히 보여줍니다.
-        Debug.Log($"<color=blue>[Monster OnCollisionEnter]</color> Monster collided with: {collision.gameObject.name}, Tag: {collidedTag}");
-
-        // 몬스터의 Rigidbody.isKinematic이 true이고 Collider.isTrigger가 false이면
-        // OnCollisionEnter가 호출되지 않을 수 있습니다.
-        // 하지만 혹시 모를 경우를 대비해 로그를 추가합니다.
-    }
-    public void Die()
-{
-    if (isDie) return; // 이미 죽었으면 무시
-
-    state = State.DIE;
-    isDie = true;
-
-    if (agent != null && agent.isActiveAndEnabled)
-        agent.isStopped = true;
-
-    anim.SetTrigger(hashDie);
-    GetComponent<Collider>().enabled = false;
-
-    StopAllCoroutines(); // 상태 검사/행동 중단
 }
-}
-
-

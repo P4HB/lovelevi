@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
+using System.Collections;
 
 // 필수 컴포넌트를 명시합니다.
 [RequireComponent(typeof(Animator))]
@@ -77,6 +78,11 @@ public class PlayerController : MonoBehaviour
     //ui 관련 변수
     public GameObject titanPromptTextUI;
 
+    [Header("Player Audio")] // PlayerController에 직접 오디오 변수 추가
+    public AudioSource playerAudioSource; // 공격 사운드를 재생할 AudioSource
+    public AudioClip[] attackSounds; // 3개의 공격 사운드 클립 배열
+    public float attackSoundDelay = 0.1f; // <<< 공격 사운드 딜레이
+
     void Start()
     {
         animator = GetComponent<Animator>();
@@ -88,6 +94,28 @@ public class PlayerController : MonoBehaviour
         if (playerCamera == null) playerCamera = Camera.main;
         if (playerCamera != null) playerCamera.fieldOfView = normalFOV;
         if (windEffect != null) windEffect.Stop();
+
+        // AudioSource 컴포넌트가 Inspector에 연결되지 않았다면 자동으로 찾기 (안전 장치)
+        if (playerAudioSource == null)
+        {
+            playerAudioSource = GetComponent<AudioSource>();
+            if (playerAudioSource == null)
+            {
+                // 플레이어 오브젝트에 AudioSource가 없다면 추가 (공격 사운드 전용)
+                playerAudioSource = gameObject.AddComponent<AudioSource>();
+                Debug.Log("PlayerController: Added AudioSource component for attack sounds.");
+                playerAudioSource.playOnAwake = false;
+                playerAudioSource.loop = false;
+                playerAudioSource.spatialBlend = 0; // 2D Sound
+            }
+        }
+        else
+        {
+             // 이미 연결된 AudioSource의 설정 확인
+             playerAudioSource.playOnAwake = false;
+             playerAudioSource.loop = false;
+             playerAudioSource.spatialBlend = 0; // 2D Sound
+        }
     }
 
     void Update()
@@ -114,10 +142,26 @@ public class PlayerController : MonoBehaviour
                 MonsterCtrl titan = currentTargetTitan.GetComponent<MonsterCtrl>();
                 if (titan != null)
                 {
-                    titan.Die();
+                    // titan.Die();
                     if (titanPromptTextUI != null)
                         titanPromptTextUI.SetActive(false);
                 }
+            }
+
+            // 무작위 공격 사운드 재생 (코루틴으로 딜레이 적용)
+            if (playerAudioSource != null && attackSounds.Length > 0)
+            {
+                int randomIndex = Random.Range(0, attackSounds.Length);
+                AudioClip clipToPlay = attackSounds[randomIndex];
+                
+                // === 코루틴 시작: 딜레이 후 사운드 재생 ===
+                StartCoroutine(PlayAttackSoundWithDelay(clipToPlay, attackSoundDelay));
+                Debug.Log($"[PlayerController] Attack animation triggered. Sound '{clipToPlay.name}' will play after {attackSoundDelay:F2}s.");
+            }
+            else
+            {
+                if(playerAudioSource == null) Debug.LogWarning("PlayerController: playerAudioSource가 연결되지 않았습니다.");
+                if(attackSounds.Length == 0) Debug.LogWarning("PlayerController: attackSounds 배열이 비어 있습니다. 공격 사운드를 재생할 수 없습니다.");
             }
         }
         // --- 로직 변경: 갈고리 '발사' 로직 (마우스 클릭) ---
@@ -192,6 +236,19 @@ public class PlayerController : MonoBehaviour
         UpdateCameraFOV(isFlying);
         UpdatePlayerModelTilt(isFlying);
     }
+
+    // === 새로운 코루틴 함수: 딜레이 후 공격 사운드 재생 ===
+    private IEnumerator PlayAttackSoundWithDelay(AudioClip clip, float delay)
+    {
+        yield return new WaitForSeconds(delay); // 지정된 시간만큼 대기
+
+        if (playerAudioSource != null && clip != null)
+        {
+            playerAudioSource.PlayOneShot(clip); // 사운드 재생
+            Debug.Log($"[PlayerController] Played attack sound: {clip.name} after delay.");
+        }
+    }
+
     private void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("TitanNeck"))

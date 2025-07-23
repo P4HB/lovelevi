@@ -6311,7 +6311,7 @@ MonoBehaviour:
   player: {fileID: 963937400}
   mouseSensitivity: 2
   offset: {x: 0, y: 1.5, z: -5}
-  minVerticalAngle: -18
+  minVerticalAngle: -15
   maxVerticalAngle: 90
   cameraCollisionRadius: 0.3
   cameraCollisionLayers:
@@ -6698,6 +6698,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 0}
     - target: {fileID: 3828785848752722069, guid: ae852726dde3647178d1f62eb6ebb883, type: 3}
+      propertyPath: buildingCollisionDamage
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3828785848752722069, guid: ae852726dde3647178d1f62eb6ebb883, type: 3}
       propertyPath: damageableMonsterPartNames.Array.size
       value: 4
       objectReference: {fileID: 0}
@@ -6729,6 +6733,34 @@ PrefabInstance:
       propertyPath: crosshairImage
       value: 
       objectReference: {fileID: 159993431}
+    - target: {fileID: 7405393603910396128, guid: ae852726dde3647178d1f62eb6ebb883, type: 3}
+      propertyPath: playerAudioSource
+      value: 
+      objectReference: {fileID: 83390608}
+    - target: {fileID: 7405393603910396128, guid: ae852726dde3647178d1f62eb6ebb883, type: 3}
+      propertyPath: attackSounds.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 7405393603910396128, guid: ae852726dde3647178d1f62eb6ebb883, type: 3}
+      propertyPath: attackSounds.Array.data[0]
+      value: 
+      objectReference: {fileID: 8300000, guid: bf90d816c48d7433388ef7b5cfb725cb, type: 3}
+    - target: {fileID: 7405393603910396128, guid: ae852726dde3647178d1f62eb6ebb883, type: 3}
+      propertyPath: attackSounds.Array.data[1]
+      value: 
+      objectReference: {fileID: 8300000, guid: b25fd94aab239481b921317ecb686116, type: 3}
+    - target: {fileID: 7405393603910396128, guid: ae852726dde3647178d1f62eb6ebb883, type: 3}
+      propertyPath: attackSounds.Array.data[2]
+      value: 
+      objectReference: {fileID: 8300000, guid: d26a27f5eb243448a82f6ec0cb1328a3, type: 3}
+    - target: {fileID: 7762968589104865290, guid: ae852726dde3647178d1f62eb6ebb883, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 1cd5ed157de5846dd89f22150eb8b6b3, type: 2}
+    - target: {fileID: 7792364870636971283, guid: ae852726dde3647178d1f62eb6ebb883, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: 1cd5ed157de5846dd89f22150eb8b6b3, type: 2}
     - target: {fileID: 8506277113899421120, guid: ae852726dde3647178d1f62eb6ebb883, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0

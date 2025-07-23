@@ -71,7 +71,6 @@ public class GameManager : MonoBehaviour
             // 10초가 지나면 Success Scene으로 이동
             if (elapsedTime >= successSceneTransitionTime)
             {
-                Debug.Log($"[GameManager] {successSceneTransitionTime}초 경과! Success Scene으로 이동합니다.");
                 isGameStarted = false; // 게임 종료 처리
                 SceneManager.LoadScene(successSceneName);
             }

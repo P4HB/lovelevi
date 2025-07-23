@@ -79,14 +79,12 @@ public class PlayerHealth : MonoBehaviour
         currentHealth -= amount; 
         currentHealth = Mathf.Max(currentHealth, 0); 
 
-        Debug.Log("Player took " + amount + " damage. Current Health: " + currentHealth);
         UpdateHealthUI(); 
 
         // 피격 사운드 재생 (기존 로직)
         if (hitAudioSource != null && hitSoundClip != null)
         {
             hitAudioSource.PlayOneShot(hitSoundClip); 
-            Debug.Log("Playing hit sound: " + hitSoundClip.name);
         }
         else
         {
@@ -108,7 +106,6 @@ public class PlayerHealth : MonoBehaviour
         currentHealth += amount; 
         currentHealth = Mathf.Min(currentHealth, maxHealth); 
 
-        Debug.Log("Player healed " + amount + ". Current Health: " + currentHealth);
         UpdateHealthUI(); 
     }
 
@@ -162,14 +159,13 @@ public class PlayerHealth : MonoBehaviour
     // 플레이어가 죽었을 때 호출되는 함수
     void Die()
     {
-        Debug.Log("Player has died!");
-        
+      
         // === PlayerController 스크립트 비활성화 (즉시 움직임 중단) ===
         PlayerController playerController = GetComponent<PlayerController>();
         if (playerController != null)
         {
             playerController.enabled = false; // PlayerController 컴포넌트 비활성화
-            Debug.Log("PlayerController disabled to stop movement.");
+
         }
         else
         {
@@ -180,7 +176,6 @@ public class PlayerHealth : MonoBehaviour
         if (hitAudioSource != null && dieSoundClip != null)
         {
             hitAudioSource.PlayOneShot(dieSoundClip); 
-            Debug.Log("Playing death sound: " + dieSoundClip.name);
         }
         else
         {
@@ -209,13 +204,11 @@ public class PlayerHealth : MonoBehaviour
             // 사운드가 아직 재생 중일 수 있으므로 짧은 지연을 추가 (선택 사항)
             if (delayTime < 0.1f) delayTime = 0.1f; // 최소 대기 시간
         }
-        Debug.Log($"Waiting {delayTime} seconds before loading End Scene...");
         yield return new WaitForSeconds(delayTime); 
 
         // 3. GameManager.EndGame() 호출 (씬 전환 및 BGM 정지 로직 포함)
         if (GameManager.Instance != null)
         {
-            Debug.Log("Calling GameManager.Instance.EndGame() for scene transition.");
             GameManager.Instance.EndGame(); // GameManager의 EndGame 함수 호출
         }
         else
@@ -233,16 +226,12 @@ public class PlayerHealth : MonoBehaviour
        string collidedTag = collision.gameObject.tag;
        string collidedColliderName = collision.collider.name; 
 
-       Debug.Log($"<color=blue>[OnCollisionEnter]</color> Player collided with: {collision.gameObject.name}, Tag: {collidedTag}, Collider: {collidedColliderName}");
-
        if (collidedTag == buildingTag)
        {
-           Debug.Log($"Player collided with Building: {collision.gameObject.name}, Taking {buildingCollisionDamage} damage.");
            TakeDamage(buildingCollisionDamage);
        }
        else if (IsDamageableMonsterPart(collidedColliderName)) 
        {
-           Debug.Log($"Player hit by Monster Part: {collidedColliderName}, Taking {monsterCollisionDamage} damage.");
            TakeDamage(monsterCollisionDamage); 
        }
     }

@@ -1,6 +1,9 @@
 using UnityEngine;
 using System.Collections;
-
+using TMPro;
+using UnityEngine.UI;
+using UnityEngine.Audio;
+using UnityEngine.SceneManagement;
 public class BossTrigger : MonoBehaviour
 {
     public GameObject colossalTitanPrefab;
@@ -14,7 +17,7 @@ public class BossTrigger : MonoBehaviour
     private bool armoredSpawned = false;
 
 
-    private float colossalSpawnTime = 15f;
+    private float colossalSpawnTime = 1000f;
     private float armoredDelayAfterColossal = 20f;
     private float gumingoutMusic = 2f;
     private GameObject spawnedColossal;
@@ -53,7 +56,8 @@ public class BossTrigger : MonoBehaviour
 
         if (colossalSpawned && !armoredSpawned && elapsedTime >= (colossalSpawnTime + armoredDelayAfterColossal))
         {
-            Instantiate(armoredTitanPrefab, armoredSpawnPoint.position, Quaternion.identity);
+            GameObject boss = Instantiate(armoredTitanPrefab, armoredSpawnPoint.position, Quaternion.identity);
+            BossHealth bossHealth = boss.GetComponent<BossHealth>();
             Debug.Log("🛡️ 갑옷 타이탄 등장!");
             armoredSpawned = true;
 

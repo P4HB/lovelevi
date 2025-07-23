@@ -30,7 +30,7 @@ public class PlayerController : MonoBehaviour
     public Rigidbody playerRigidbody;
     public float grappleForce = 40f;
     public float burstAccelerationForce = 40f;
-    public float burstUpwardForce = 30f;
+    public float burstUpwardForce = 10f;
     public float maxGrappleSpeed = 50f;
 
     // === 가스 분사 이펙트 관련 변수 ===
@@ -72,9 +72,8 @@ public class PlayerController : MonoBehaviour
     private bool isGrounded = true;          // 플레이어가 땅에 닿아있는지 여부
 
     // 공격 관련 변수
-    private bool isNearTitanNeck = false;
     private GameObject currentTargetTitan;
-
+    public float attackRange = 20.0f;
     //ui 관련 변수
     public GameObject titanPromptTextUI;
 
@@ -134,17 +133,28 @@ public class PlayerController : MonoBehaviour
             // hitSomething && canGrappleTarget을 사용하여 조준점 색상 결정
             crosshairImage.color = hitSomething && canGrappleTarget ? grappleableCrosshairColor : defaultCrosshairColor;
         }
+        UpdateNearestTitan();
         if (Input.GetKeyDown(KeyCode.R))
         {
             animator.SetTrigger("Attack");
-            if (isNearTitanNeck && currentTargetTitan != null)
+            MonsterCtrl titan = currentTargetTitan.GetComponent<MonsterCtrl>();
+            if (titan != null && !titan.isDie && titan.DistanceToPlayer <= titan.xMarkDisplayDistance)
             {
-                MonsterCtrl titan = currentTargetTitan.GetComponent<MonsterCtrl>();
-                if (titan != null)
+                titan.Death(); // or titan.Die();
+                if (titanPromptTextUI != null)
+                    titanPromptTextUI.SetActive(false);
+            }
+            GameObject boss = GameObject.FindWithTag("Boss"); // Boss 태그 필수!
+            if (boss != null)
+            {
+                float dist = Vector3.Distance(transform.position, boss.transform.position);
+                if (dist <= 20f) // 공격 범위 제한
                 {
-                    // titan.Die();
-                    if (titanPromptTextUI != null)
-                        titanPromptTextUI.SetActive(false);
+                    BossHealth BossHealth = boss.GetComponent<BossHealth>();
+                    if (BossHealth != null)
+                    {
+                        BossHealth.TakeDamage(20); // 데미지 20 주기
+                    }
                 }
             }
 
@@ -253,7 +263,6 @@ public class PlayerController : MonoBehaviour
     {
         if (other.CompareTag("TitanNeck"))
         {
-            isNearTitanNeck = true;
             currentTargetTitan = other.GetComponentInParent<MonsterCtrl>()?.gameObject;
             if (titanPromptTextUI != null)
                 titanPromptTextUI.SetActive(true); // UI 표시
@@ -264,7 +273,6 @@ public class PlayerController : MonoBehaviour
     {
         if (other.CompareTag("TitanNeck"))
         {
-            isNearTitanNeck = false;
             currentTargetTitan = null;
             
             if (titanPromptTextUI != null)
@@ -418,5 +426,27 @@ public class PlayerController : MonoBehaviour
             }
         }
         return false;
+    }
+    private void UpdateNearestTitan()
+    {
+        float closestDistance = Mathf.Infinity;
+        GameObject closestTitan = null;
+
+        // "Monster" 태그가 붙은 모든 오브젝트를 찾음
+        GameObject[] allTitans = GameObject.FindGameObjectsWithTag("Monster");
+        foreach (GameObject titan in allTitans)
+        {
+            float distance = Vector3.Distance(transform.position, titan.transform.position);
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestTitan = titan;
+            }
+        }
+
+        if (closestTitan != null)
+        {
+            currentTargetTitan = closestTitan;
+        }
     }
 }

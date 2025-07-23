@@ -116,15 +116,6 @@ public class MonsterCtrl : MonoBehaviour
                     }
                 }
             }
-            
-            // T 버튼 눌렀을 때 몬스터 죽음 로직
-            if (Input.GetKeyDown(KeyCode.T) && distance <= xMarkDisplayDistance && !isDie)
-            {
-                state = State.DIE; // 상태를 DIE로 변경
-                isDie = true; // 죽음 플래그 설정
-                Debug.Log($"[MonsterCtrl] T key pressed! Monster state set to DIE.");
-                // 이 코루틴(CheckMonsterState)은 isDie가 true가 되면 자연스럽게 종료됩니다.
-            }
 
             // 몬스터 상태 변경 로직
             if (!isDie) 
@@ -258,33 +249,35 @@ public class MonsterCtrl : MonoBehaviour
         // OnDeathAnimationEnd 함수 호출
         OnDeathAnimationEnd(); 
     }
+    public void Death(){
+        if (isDie) return;
 
-    // --- OnTriggerEnter 함수 (기존) ---
-    void OnTriggerEnter(Collider other) 
+        state = State.DIE;
+        isDie = true;
+        Debug.Log("[MonsterCtrl] ForceDeath() called from Player!");
+         StartCoroutine(ExecuteDeathNow()); // 바로 죽음 로직 실행
+    }
+    private IEnumerator ExecuteDeathNow()
     {
-        string collidedTag = other.gameObject.tag;
-        // ... (로그 및 로직) ...
-        if (other.CompareTag("BULLET")) // 총알과 충돌 시
+        // NavMesh 정지
+        if (agent != null && agent.isActiveAndEnabled)
+            agent.isStopped = true;
+
+        anim.SetTrigger("Die");
+
+        yield return new WaitForEndOfFrame(); // 애니메이터 상태 업데이트 기다림
+        float dieAnimationLength = anim.GetCurrentAnimatorStateInfo(0).length;
+        StartCoroutine(ExecuteOnDeathAnimationEndAfterDelay(dieAnimationLength));
+    }
+    public float DistanceToPlayer
+    {
+        get
         {
-            Destroy(other.gameObject); 
-            anim.SetTrigger(hashHit); 
-            // ShowBloodEffect(other.transform.position, Quaternion.identity); // 혈흔 효과 사용시 주석 해제
-            hp -= 10; // HP 감소
-            if (hp <= 0) 
-            {
-                state = State.DIE; // HP가 0 이하면 죽음 상태로 전환
-                isDie = true;
-            }
+            if (playerTr == null) return float.MaxValue;
+            return Vector3.Distance(transform.position, playerTr.position);
         }
     }
-
     // --- OnCollisionEnter 함수 (기존) ---
-    void OnCollisionEnter(Collision collision)
-    {
-        string collidedTag = collision.gameObject.tag;
-        // ... (로그 및 로직) ...
-    }
-
     void OnPlayerDie()
     {
         StopAllCoroutines();

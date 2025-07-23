@@ -66,10 +66,16 @@ public class PlayerController : MonoBehaviour
     public float maxSideTiltAngle = 15f;
 
     [Header("Ground Check")]
-    public float groundCheckDistance = 1f; // 플레이어 발밑에서 얼마나 아래까지 바닥을 감지할지 거리
+    public float groundCheckDistance = 3f; // 플레이어 발밑에서 얼마나 아래까지 바닥을 감지할지 거리
     public LayerMask Grappleable;            // 바닥으로 인식할 오브젝트들의 레이어 (이것은 줄 걸기와는 별개)
     private bool isGrounded = true;          // 플레이어가 땅에 닿아있는지 여부
-    private bool isAttack = false;
+
+    // 공격 관련 변수
+    private bool isNearTitanNeck = false;
+    private GameObject currentTargetTitan;
+
+    //ui 관련 변수
+    public GameObject titanPromptTextUI;
 
     void Start()
     {
@@ -100,10 +106,19 @@ public class PlayerController : MonoBehaviour
             // hitSomething && canGrappleTarget을 사용하여 조준점 색상 결정
             crosshairImage.color = hitSomething && canGrappleTarget ? grappleableCrosshairColor : defaultCrosshairColor;
         }
-        if (Input.GetKeyDown(KeyCode.T) && !isAttack && !isGrounded)
+        if (Input.GetKeyDown(KeyCode.R))
         {
-            isAttack = true;
-            animator.SetBool("isAttack", true);
+            animator.SetTrigger("Attack");
+            if (isNearTitanNeck && currentTargetTitan != null)
+            {
+                MonsterCtrl titan = currentTargetTitan.GetComponent<MonsterCtrl>();
+                if (titan != null)
+                {
+                    titan.Die();
+                    if (titanPromptTextUI != null)
+                        titanPromptTextUI.SetActive(false);
+                }
+            }
         }
         // --- 로직 변경: 갈고리 '발사' 로직 (마우스 클릭) ---
         if (Input.GetMouseButtonDown(0)) // 왼쪽 클릭으로 왼쪽 갈고리 발사/연결
@@ -177,7 +192,28 @@ public class PlayerController : MonoBehaviour
         UpdateCameraFOV(isFlying);
         UpdatePlayerModelTilt(isFlying);
     }
-    
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("TitanNeck"))
+        {
+            isNearTitanNeck = true;
+            currentTargetTitan = other.GetComponentInParent<MonsterCtrl>()?.gameObject;
+            if (titanPromptTextUI != null)
+                titanPromptTextUI.SetActive(true); // UI 표시
+        }
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("TitanNeck"))
+        {
+            isNearTitanNeck = false;
+            currentTargetTitan = null;
+            
+            if (titanPromptTextUI != null)
+                titanPromptTextUI.SetActive(false); // UI 숨김
+        }
+    }
     private bool HandleGroundMovement()
     {
         float horizontalInput = Input.GetAxis("Horizontal");
@@ -311,12 +347,6 @@ public class PlayerController : MonoBehaviour
         isGrounded = Physics.Raycast(transform.position, Vector3.down, groundCheckDistance, Grappleable);
         animator.SetBool("isGrounded", isGrounded);
     }
-    public void OnAttackAnimationEnd()
-    {
-        isAttack = false;
-        animator.SetBool("isAttack", false);
-    }
-
     // --- 새로운 헬퍼 함수 추가 (클래스 내부, Update 함수 밖) ---
     // 이 함수가 있어야 grappleableTags 배열을 사용할 수 있습니다.
     bool IsGrappleableTarget(Collider collider)

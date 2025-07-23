@@ -17,9 +17,9 @@ public class BossTrigger : MonoBehaviour
     private bool armoredSpawned = false;
 
 
-    private float colossalSpawnTime = 25f;
+    private float colossalSpawnTime = 20f;
     private float armoredDelayAfterColossal = 20f;
-    private float gumingoutMusic = 10f;
+    private float gumingoutMusic = 5f;
     private GameObject spawnedColossal;
 
     // === 연출 관련 ===
@@ -38,6 +38,8 @@ public class BossTrigger : MonoBehaviour
     public AudioSource musicSource;
     public AudioClip colossalMusic;
     bool hasPlayedMusic = false;
+    public Material sunsetSkyboxMaterial;
+
     void Awake(){
         cinematicCamera.enabled = false;
         mainCamera.enabled = true;
@@ -58,10 +60,10 @@ public class BossTrigger : MonoBehaviour
 
         if (colossalSpawned && !armoredSpawned && elapsedTime >= (colossalSpawnTime + armoredDelayAfterColossal))
         {
-            GameObject boss = Instantiate(armoredTitanPrefab, armoredSpawnPoint.position, Quaternion.identity);
-            BossHealth bossHealth = boss.GetComponent<BossHealth>();
+            Instantiate(armoredTitanPrefab, armoredSpawnPoint.position, Quaternion.identity);
             Debug.Log("🛡️ 갑옷 타이탄 등장!");
             armoredSpawned = true;
+
 
             if (spawnedColossal != null)
             {
@@ -149,7 +151,7 @@ public class BossTrigger : MonoBehaviour
         mainLight.intensity = originalIntensity;
         mainLight.color = originalColor;
         // 1초 대기 후 타이탄 등장 + 폭발
-
+        ApplySunsetSkybox(); // 석양 하늘 적용
         // 폭발 이펙트
         spawnedColossal = Instantiate(colossalTitanPrefab, colossalSpawnPoint.position, colossalSpawnPoint.rotation);
         Debug.Log("💥 초대형 타이탄 등장!");
@@ -176,6 +178,14 @@ public class BossTrigger : MonoBehaviour
         {
             playerMovementScript.enabled = true;
             Debug.Log("🔓 플레이어 이동 잠금 해제");
+        }
+    }
+    void ApplySunsetSkybox()
+    {
+        if (sunsetSkyboxMaterial != null)
+        {
+            RenderSettings.skybox = sunsetSkyboxMaterial;
+            DynamicGI.UpdateEnvironment(); // 리얼타임 글로벌 일루미네이션 반영
         }
     }
 }

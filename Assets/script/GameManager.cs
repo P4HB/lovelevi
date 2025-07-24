@@ -15,13 +15,13 @@ public class GameManager : MonoBehaviour
     public float successSceneTransitionTime = 60f; // 10초 설정
 
     [Header("Scene Settings")]
-    public string mainGameSceneName = "game";
+    public string mainGameSceneName = "GameScene";
     public string endSceneName = "EndScene";
     public string successSceneName = "SuccessScene";
 
     [Header("Audio Settings")]
     public AudioSource bgmAudioSource;
-    public AudioClip gameSceneBGM;
+    // public AudioClip gameSceneBGM;
     public AudioClip introSceneBGM;
     public AudioClip endSceneBGM;
     public AudioClip successSceneBGM; // Success Scene BGM 추가
@@ -82,11 +82,11 @@ public class GameManager : MonoBehaviour
         Debug.Log("Game Started! Loading Main Game Scene.");
         Time.timeScale = 1f;
 
-        if (bgmAudioSource != null && bgmAudioSource.isPlaying)
-        {
-            bgmAudioSource.Stop();
-        }
-        
+        // if (bgmAudioSource != null && bgmAudioSource.isPlaying)
+        // {
+        //     bgmAudioSource.Stop();
+        // }
+        // Destroy(GameObject.Find("IntroBGM"));
         SceneManager.LoadScene(mainGameSceneName);
     }
 
@@ -120,20 +120,20 @@ public class GameManager : MonoBehaviour
             {
                 Debug.LogError("[GameManager] BGM AudioSource is NULL. Cannot play BGM.");
             }
-            else if (gameSceneBGM == null)
-            {
-                Debug.LogError("[GameManager] Game Scene BGM AudioClip is NULL. Cannot play BGM.");
-            }
-            else
-            {
-                Debug.Log($"[GameManager] BGM AudioSource found: {bgmAudioSource.name}");
-                Debug.Log($"[GameManager] Game Scene BGM AudioClip assigned: {gameSceneBGM.name}");
-                Debug.Log($"[GameManager] BGM AudioSource current status - Playing: {bgmAudioSource.isPlaying}, Volume: {bgmAudioSource.volume}, Mute: {bgmAudioSource.mute}");
+            // else if (gameSceneBGM == null)
+            // {
+            //     Debug.LogError("[GameManager] Game Scene BGM AudioClip is NULL. Cannot play BGM.");
+            // }
+            // else
+            // {
+            //     Debug.Log($"[GameManager] BGM AudioSource found: {bgmAudioSource.name}");
+            //     Debug.Log($"[GameManager] Game Scene BGM AudioClip assigned: {gameSceneBGM.name}");
+            //     Debug.Log($"[GameManager] BGM AudioSource current status - Playing: {bgmAudioSource.isPlaying}, Volume: {bgmAudioSource.volume}, Mute: {bgmAudioSource.mute}");
 
-                bgmAudioSource.clip = gameSceneBGM;
-                bgmAudioSource.Play();
-                Debug.Log($"[GameManager] BGM Play() called. After call status - Is Playing: {bgmAudioSource.isPlaying}");
-            }
+            //     bgmAudioSource.clip = gameSceneBGM;
+            //     bgmAudioSource.Play();
+            //     Debug.Log($"[GameManager] BGM Play() called. After call status - Is Playing: {bgmAudioSource.isPlaying}");
+            // }
         }
         else if (scene.name == endSceneName)
         {
@@ -234,6 +234,22 @@ public class GameManager : MonoBehaviour
         // }
 
         SceneManager.LoadScene(endSceneName);
+    }
+
+    public void LoadSuccessScene()
+    {
+        Debug.Log("Loading Success Scene after 10 seconds.");
+        isGameStarted = false; // 게임 종료 상태
+        Time.timeScale = 1f; // 시간 스케일 초기화
+
+        // SuccessScene으로 전환 시 BGM은 SuccessScene BGM으로 자동 전환되므로 여기서 멈출 필요는 없습니다.
+        // 하지만 명시적으로 멈추고 싶다면 아래 주석을 해제하세요.
+        // if (bgmAudioSource != null && bgmAudioSource.isPlaying)
+        // {
+        //     bgmAudioSource.Stop();
+        // }
+
+        SceneManager.LoadScene(successSceneName);
     }
 
     // === 게임 재시작 함수 (수정) ===

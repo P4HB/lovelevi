@@ -349,10 +349,10 @@ MonoBehaviour:
   elapsedTime: 0
   timerTextInstance: {fileID: 0}
   successSceneTransitionTime: 1000
-  mainGameSceneName: game
+  mainGameSceneName: GameScene
   endSceneName: EndScene
   successSceneName: SuccessScene
-  bgmAudioSource: {fileID: 2108493366}
+  bgmAudioSource: {fileID: 216741024}
   gameSceneBGM: {fileID: 8300000, guid: 1a554d24181ab46f2b8e8e1493c7c9af, type: 3}
   introSceneBGM: {fileID: 8300000, guid: 0c5d264d74851468e83ef5aefa9c46eb, type: 3}
   endSceneBGM: {fileID: 8300000, guid: 5253bd2fbdd964250912e0a8b1c8f749, type: 3}

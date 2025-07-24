@@ -67,7 +67,7 @@ public class PlayerController : MonoBehaviour
     public float maxSideTiltAngle = 15f;
 
     [Header("Ground Check")]
-    public float groundCheckDistance = 3f; // 플레이어 발밑에서 얼마나 아래까지 바닥을 감지할지 거리
+    public float groundCheckDistance = 2f; // 플레이어 발밑에서 얼마나 아래까지 바닥을 감지할지 거리
     public LayerMask Grappleable;            // 바닥으로 인식할 오브젝트들의 레이어 (이것은 줄 걸기와는 별개)
     private bool isGrounded = true;          // 플레이어가 땅에 닿아있는지 여부
 

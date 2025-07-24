@@ -215,6 +215,7 @@ public class BossMonsterCtrl : MonoBehaviour
 
         // 몬스터 비활성화
         gameObject.SetActive(false);
+        GameManager.Instance.LoadSuccessScene();
     }
     // 플레이어가 죽었을 때 호출될 함수 (이벤트 기반)
     void OnPlayerDie()
